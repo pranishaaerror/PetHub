@@ -2,7 +2,7 @@
 
 export const LandingPage = () => {
   return (
-    <div>pranisha</div>
+    <div className="font-semibold text-red-300">pranisha alu potato</div>
   )
 }
 

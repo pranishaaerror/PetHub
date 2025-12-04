@@ -3,8 +3,8 @@ import express from 'express';
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import nodemailer from "nodemailer"
-
-
+import crypto from 'node:crypto'
+import UserPasswordResetToken from '../models/UserPasswordResetToken.js';
 
 const router = express.Router();
 
@@ -72,28 +72,44 @@ router.post('/login', async (req, res) => {
   res.json({ message: 'Login successful', token });
 });
 
+function generateRandomHexString(length) {
+    // Each byte converts to 2 hex characters, so request half the desired length in bytes
+    const bytesLength = Math.ceil(length / 2); 
+    const randomBytes = crypto.randomBytes(bytesLength);
+    return randomBytes.toString('hex').slice(0, length); // Slice to ensure exact length if odd number requested
+}
+
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
   // Check if the email exists in your user database
-  const user = await User.findOne ({email});
+  const user = await User.findOne({email});
   if (user) {
     // Generate a reset token
-    const token = crypto.randomBytes(20).toString('hex');
+    const token =generateRandomHexString(10);
     // Store the token with the user's email in a database or in-memory store
-    user[email].resetToken = token;
+    
+    const userToken = new UserPasswordResetToken({
+      
+      email,
+     token,
+    });
+     await userToken.save();
+
+
+    
     // Send the reset token to the user's email
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: 'np03cs4s240022@heraldcollege.edu.np',
-        pass: '',
+        pass: process.env.GMAIL_APP_PASSWORD,
       },
     });
     const mailOptions = {
-      from: 'your-email@gmail.com',
+      from: 'np03cs4s240022@heraldcollege.edu.np',
       to: email,
       subject: 'Password Reset',
-      text: `Click the following link to reset your password: http://localhost:3000/reset-password/${token}`,
+      text: `Password Reset Token: ${token}`,
     };
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
@@ -109,6 +125,18 @@ router.post('/forgot-password', async (req, res) => {
   }
 });
 
+router.post("/reset-password",async (req,res) => {
+  const {password,token} = req.body;
+  const userToken= await UserPasswordResetToken.findOne({token});
+  if (userToken) {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await User.findOneAndUpdate({ email: userToken.email }, {password:hashedPassword},);
+    await UserPasswordResetToken.deleteOne({email:userToken.email});
+    res.status(200).send('Password updated successfully');
+  } else {
+    res.status(404).send('Invalid or expired token');
+  }
+})
 export default router;
 
 

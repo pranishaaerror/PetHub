@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import express from 'express';
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
+import nodemailer from "nodemailer"
 
 
 
@@ -71,20 +72,21 @@ router.post('/login', async (req, res) => {
   res.json({ message: 'Login successful', token });
 });
 
-app.post('/forgot-password', (req, res) => {
+router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
   // Check if the email exists in your user database
-  if (users[email]) {
+  const user = await User.findOne ({email});
+  if (user) {
     // Generate a reset token
     const token = crypto.randomBytes(20).toString('hex');
     // Store the token with the user's email in a database or in-memory store
-    users[email].resetToken = token;
+    user[email].resetToken = token;
     // Send the reset token to the user's email
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: 'your-email@gmail.com',
-        pass: 'your-email-password',
+        user: 'np03cs4s240022@heraldcollege.edu.np',
+        pass: '',
       },
     });
     const mailOptions = {

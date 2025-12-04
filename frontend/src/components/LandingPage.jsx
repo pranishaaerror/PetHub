@@ -1,10 +1,8 @@
-import React from 'react'
 
-const Home = () => {
+
+export const LandingPage = () => {
   return (
     <div>pranisha</div>
   )
 }
 
-
-export default Home

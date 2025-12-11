@@ -13,17 +13,5 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST new user
-router.post("/", async (req, res) => {
-  const { name, email, age } = req.body;
-  const user = new User({ name, email, age });
-
-  try {
-    const savedUser = await user.save();
-    res.status(201).json(savedUser);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-});
 
 export default router;

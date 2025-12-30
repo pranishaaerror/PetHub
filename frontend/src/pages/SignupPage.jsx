@@ -12,8 +12,9 @@ export const SignupPage = () => {
   return (
     <div className="w-full h-screen overflow-hidden flex bg-[#FFF7EB] font-sans">
 
-      {/* LEFT SECTION */}
-      <div className="w-1/2 relative flex flex-col justify-center items-center rounded-r-3xl p-10 bg-gradient-to-br from-[#FCDCA5] to-[#F7B864]">
+      
+      <div className="w-1/2 relative flex flex-col justify-center items-center p-10 bg-gradient-to-br from-[#FCDCA5] to-[#F7B864]">
+
         
         <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">
           Welcome to PetHub
@@ -31,12 +32,12 @@ export const SignupPage = () => {
         </div>
       </div>
 
-      {/* RIGHT SECTION */}
+      
       <div className="w-1/2 flex flex-col items-center justify-center px-14">
 
         <h2 className="text-3xl font-bold mb-6 text-gray-900">Sign Up</h2>
 
-        {/* Form */}
+        
         <form onSubmit={(e) => {
           e.preventDefault()
           mutate({

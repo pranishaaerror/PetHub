@@ -1,10 +1,6 @@
 import mongoose from "mongoose";
 const appointmentTableSchema = new mongoose.Schema({
-    appointmentId:{
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        unique: true
-    },
+   
     appointmentTime:{
         type: Date,
         required: true

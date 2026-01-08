@@ -5,14 +5,13 @@ const router = express.Router();
 
 router.post("/",async(req,res) => {
     try{
-        const{ appointmentId, appointmentTime, userId, serviceId, } = req.body;
-        if (!appointmentId || !appointmentTime || !userId || !serviceId ){
+        const{  appointmentTime, userId, serviceId, } = req.body;
+        if ( !appointmentTime || !userId || !serviceId ){
              return res.status(400).json({ message: "All required fields must be provided" });
 
         }
 
 const newAppointment = new Appointment({
-      appointmentId,
       appointmentTime,
       userId,
       serviceId,

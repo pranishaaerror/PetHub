@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import userRoutes from "./routes/users.js";
 import authRoutes from"./routes/authentication.js";
 import serviceRoutes from "./routes/services.js";
+import groomerRoutes from "./routes/groomer.js";
 import appointmentRoutes from "./routes/appointment.js";
 
 dotenv.config();
@@ -30,5 +31,6 @@ app.use("/api/users", userRoutes);
 app.use("/api/auth",authRoutes);
 app.use("/api/services",serviceRoutes);
 app.use("/api/appointments",appointmentRoutes);
+app.use("/api/groomers",groomerRoutes);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -10,6 +10,7 @@ router.post("/",async(req,res) => {
              return res.status(400).json({ message: "All required fields must be provided" });
 
         }
+       
 
 const newAppointment = new Appointment({
       appointmentTime,
@@ -29,4 +30,14 @@ const newAppointment = new Appointment({
     return res.status(500).json({ message: err.message });
   }
 });
+
+ router.get("/", async (req, res) => {
+          try {
+            const appointment = await Appointment.find().populate(['userId',"serviceId"]);
+            res.json(appointment);
+          } catch (err) {
+            res.status(500).json({ message: err.message });
+          }
+        })
+
 export default router;

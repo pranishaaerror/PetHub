@@ -5,15 +5,15 @@ const router = express.Router();
 
 router.post("/",async(req,res) => {
     try{
-        const{ serviceId, serviceName, price } = req.body;
-        if ( !price || !serviceName || !serviceId ){
+        const{  serviceName, price } = req.body;
+        if ( !price || !serviceName  ){
              return res.status(400).json({ message: "All required fields must be provided" });
 
         }
 
 const newServices = new Services({
     price,
-    serviceId,
+    
     serviceName
    
       
@@ -31,6 +31,14 @@ const newServices = new Services({
   }
 });
 
+router.get("/", async (req, res) => {
+  try {
+    const services = await Services.find();
+    res.json(services);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 export default router;
 

@@ -1,53 +1,86 @@
 import { Link } from "react-router-dom"
 import { useServices } from "../apis/services/hooks"
+import { Button, Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 
 export const ServiceManagement = () => {
-const {data} = useServices()
-    return (
-        <>
+    const { data } = useServices()
 
-            <div className="flex gap-3">
-                <Link to ="/services/create" className="px-4 py-2 bg-white text-black border border-gray-300 rounded-md text-sm hover:bg-gray-100">
-                    Create New
+    // Format date helper
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    };
+
+    return (
+        <div className="p-8">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold text-gray-800">Service Management</h1>
+                <Link
+                    to="/admin/services/create"
+                    className="px-4 py-2 bg-[#f9c073] text-gray-900 rounded-lg text-sm font-medium hover:bg-[#f0b165] transition-colors"
+                >
+                    + Create New Service
                 </Link>
             </div>
 
-            <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <table className="w-full">
                     <thead>
-                        <tr className="border-b border-[#dbe6dd] dark:border-gray-800 bg-gray-50/50 dark:bg-[#1a3320]">
-                            <th className="py-4 px-6 text-[#618968] dark:text-gray-400 text-xs font-bold uppercase tracking-wider w-24">ID</th>
-                            <th className="py-4 px-6 text-[#618968] dark:text-gray-400 text-xs font-bold uppercase tracking-wider">Service Name</th>
-                            <th className="py-4 px-6 text-[#618968] dark:text-gray-400 text-xs font-bold uppercase tracking-wider">Price</th>
-                            <th className="py-4 px-6 text-[#618968] dark:text-gray-400 text-xs font-bold uppercase tracking-wider">Created At</th>
+                        <tr className="bg-gray-50 border-b border-gray-200">
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                ID
+                            </th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Service Name
+                            </th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Price
+                            </th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Created At
+                            </th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Actions
+                            </th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#dbe6dd] dark:divide-gray-800">
-                       {data?.data?.map((service) => {
-                        return(
-                             <tr key={service._id} className="group hover:bg-gray-50 dark:hover:bg-[#1f3d25] transition-colors">
-                            <td className="py-4 px-6">
-                                <span className="text-[#111812] dark:text-gray-200 font-bold text-sm">{service._id}</span>
-                            </td>
-                            <td className="py-4 px-6">
-                                <span className="text-[#111812] dark:text-gray-200 font-bold text-sm">{service.serviceName}</span>
-                            </td>
-                            <td className="py-4 px-6">
-                                                              <span className="text-[#111812] dark:text-gray-200 font-bold text-sm">{service.price}</span>
-
-                            </td>
-                            <td className="py-4 px-6">
-                                                                <span className="text-[#111812] dark:text-gray-200 font-bold text-sm">{service.createdAt}</span>
-
-                            </td>
-                           
-                        </tr>
-                        )
-                       })}
+                    <tbody className="divide-y divide-gray-100">
+                        {data?.data?.map((service) => (
+                            <tr key={service._id} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-6 py-4">
+                                    <span className="text-xs text-gray-500 font-mono">
+                                        {service._id.slice(0, 8)}...
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="text-sm font-semibold text-gray-900">
+                                        {service.serviceName}
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <span className="text-sm font-medium text-gray-900">
+                                        ${service.price}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <span className="text-sm text-gray-500">
+                                        {formatDate(service.createdAt)}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                                        <span className="text-xl font-bold">⋮</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>
-        </>
+        </div>
     )
-
 }

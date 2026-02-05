@@ -1,14 +1,36 @@
 
 import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import dog from '../assets/dog.jpg'
 import { useLogin } from '../apis/auth/hooks';
 import { useState } from 'react';
 
+import { toast } from 'react-toastify';
+
 
 export const LoginPage = () => {
-  const {mutate,isPending} = useLogin()
+  const {mutateAsync,isPending} = useLogin()
   const [email,setEmail] = useState("")
   const [password,setPassword] = useState("")
+
+  const notify = () => toast("Logged in successfully!");
+  
+  const navigate = useNavigate();
+  
+  
+  const handleSubmit = async (e) => {
+          e.preventDefault()
+          const response = await mutateAsync({
+            email,
+            password
+          })
+          notify()
+          
+          localStorage.setItem('userToken', response.data.token);
+          
+          navigate("/admin")
+        }
+
   return (
     <div className="w-full h-screen overflow-hidden flex bg-[#FFF7EB] font-sans">
 
@@ -38,13 +60,7 @@ export const LoginPage = () => {
         <h2 className="text-3xl font-bold mb-6 text-gray-900">Log In</h2>
 
         
-        <form onSubmit={(e) => {
-          e.preventDefault()
-          mutate({
-            email,
-            password
-          })
-        }} className="w-full max-w-sm space-y-4">
+        <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
 
           <input
             type="text"
@@ -64,10 +80,16 @@ export const LoginPage = () => {
             }}
           />
 
+          
+
           <button type='submit' disabled={isPending} className="w-full bg-[#F5A623] hover:bg-[#e6951f] text-white p-3 rounded-lg font-semibold">
            {isPending ? "Please Wait ...":" Log In"}
           </button>
-
+        
+   
+    
+            
+    
           <p className="text-center text-sm text-gray-700 pt-2">
             Not a member yet?{" "}
             <Link to="/signup" className="text-blue-600 font-semibold">Sign Up</Link>

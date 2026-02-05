@@ -7,6 +7,8 @@ import authRoutes from"./routes/authentication.js";
 import serviceRoutes from "./routes/services.js";
 import groomerRoutes from "./routes/groomer.js";
 import appointmentRoutes from "./routes/appointment.js";
+import adoptionRoutes from "./routes/adoption.js";
+
 
 dotenv.config();
 
@@ -17,7 +19,7 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
 
-// MongoDB connection
+
 mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -32,5 +34,6 @@ app.use("/api/auth",authRoutes);
 app.use("/api/services",serviceRoutes);
 app.use("/api/appointments",appointmentRoutes);
 app.use("/api/groomers",groomerRoutes);
+app.use("/api/adoption",adoptionRoutes);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

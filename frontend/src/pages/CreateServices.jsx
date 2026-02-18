@@ -1,5 +1,4 @@
 
-
 import { useState } from "react";
 import { useCreateServices } from "../apis/services/hooks";
 import { useNavigate } from "react-router-dom";
@@ -7,14 +6,14 @@ export const CreateSetvices = () => {
     const { mutateAsync, isPending } = useCreateServices()
     const [serviceName, setServiceName] = useState("");
     const [servicePrice, setPrice] = useState("");
-const navigate = useNavigate()
+    const navigate = useNavigate()
     const handleSubmit = async (e) => {
         e.preventDefault();
-    await mutateAsync({
-        serviceName,
-        price:servicePrice
-    })
-    navigate("/services")
+        await mutateAsync({
+            serviceName,
+            price: servicePrice
+        })
+        navigate("/services")
     };
 
     return (
@@ -58,7 +57,7 @@ const navigate = useNavigate()
                     </button>
                 </form>
 
-               
+
             </div>
         </div>
     );

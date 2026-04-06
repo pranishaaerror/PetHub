@@ -1,1 +1,194 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
+
+:root {
+  color: #2d2d2d;
+  background: #f4ead9;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+html {
+  background: #f4ead9;
+  scroll-behavior: smooth;
+}
+
+@keyframes pet-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pethub-loader-flower-one {
+  0% {
+    transform: scale(0.5) translateY(-200px);
+    opacity: 0;
+  }
+  25% {
+    transform: scale(0.75) translateY(-100px);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(0.5) translateY(50px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0) translateY(100px);
+    opacity: 0;
+  }
+}
+
+@keyframes pethub-loader-flower-two {
+  0% {
+    transform: scale(0.5) rotateZ(-10deg) translateY(-200px) translateX(-100px);
+    opacity: 0;
+  }
+  25% {
+    transform: scale(1) rotateZ(-5deg) translateY(-100px) translateX(-50px);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1) rotateZ(0deg) translateY(0) translateX(-25px);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(0.5) rotateZ(5deg) translateY(50px) translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0) rotateZ(10deg) translateY(100px) translateX(25px);
+    opacity: 0;
+  }
+}
+
+@keyframes pethub-loader-flower-three {
+  0% {
+    transform: scale(0.5) rotateZ(10deg) translateY(-200px) translateX(100px);
+    opacity: 0;
+  }
+  25% {
+    transform: scale(1) rotateZ(5deg) translateY(-100px) translateX(50px);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1) rotateZ(0deg) translateY(0) translateX(25px);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(0.5) rotateZ(-5deg) translateY(50px) translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0) rotateZ(-10deg) translateY(100px) translateX(-25px);
+    opacity: 0;
+  }
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(255, 179, 71, 0.22), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(245, 166, 35, 0.18), transparent 28%),
+    #f4ead9;
+  color: #2d2d2d;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(245, 166, 35, 0.22);
+}
+
+@layer components {
+  .glass-surface {
+    background: rgba(255, 255, 255, 0.62);
+    backdrop-filter: blur(18px);
+  }
+
+  .pet-card {
+    @apply rounded-[28px] bg-white shadow-[0_24px_60px_rgba(45,45,45,0.06)];
+  }
+
+  .pet-chip {
+    @apply inline-flex items-center rounded-full bg-[#FFE3B3] px-3 py-1 text-xs font-semibold text-[#8B6428];
+  }
+
+  .pet-page {
+    @apply w-full space-y-6;
+  }
+
+  .pet-rise-in {
+    animation: pet-rise-in 0.8s ease-out both;
+  }
+
+  .pet-button-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,#F5A623,#FFB347)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(245,166,35,0.24)] transition-transform cursor-pointer;
+  }
+
+  .pet-button-secondary {
+    @apply inline-flex items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-[#2D2D2D] shadow-[0_15px_30px_rgba(45,45,45,0.05)] transition-transform;
+  }
+
+  .pethub-loader {
+    --fill-color: #f5a623;
+    --shine-color: rgba(245, 166, 35, 0.28);
+    position: relative;
+    height: 112px;
+    width: 112px;
+    color: var(--fill-color);
+    filter: drop-shadow(0 0 14px var(--shine-color));
+  }
+
+  .pethub-loader__flower {
+    position: absolute;
+    inset: 0;
+  }
+
+  .pethub-loader__flower--one {
+    animation: pethub-loader-flower-one 1s linear infinite;
+  }
+
+  .pethub-loader__flower--two {
+    animation: pethub-loader-flower-two 1s linear infinite;
+    opacity: 0;
+    transform: scale(0) translateY(-200px) translateX(-100px);
+    animation-delay: 0.3s;
+  }
+
+  .pethub-loader__flower--three {
+    animation: pethub-loader-flower-three 1s linear infinite;
+    opacity: 0;
+    transform: scale(0) translateY(-200px) translateX(100px);
+    animation-delay: 0.6s;
+  }
+
+ input.pethub-form-field:-webkit-autofill,
+input.pethub-form-field:-webkit-autofill:hover,
+input.pethub-form-field:-webkit-autofill:focus,
+input.pethub-form-field:-webkit-autofill:active {
+  -webkit-box-shadow: 
+    0 0 0px 1000px #F8F1E6 inset,
+    0 0 0px 2px #F5C062 !important;
+  -webkit-text-fill-color: #2D2D2D !important;
+  caret-color: #2D2D2D;
+  transition: background-color 5000s ease-in-out 0s;
+}
+}

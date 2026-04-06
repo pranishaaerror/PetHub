@@ -1,4 +1,5 @@
 import { useAdoption } from '../apis/adoption/hooks'
+import { Button } from '../components/ui/button';
 
 export const Adoption = () => {
   const { data, isLoading, isError } = useAdoption();
@@ -89,9 +90,9 @@ export const Adoption = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                  <Button className="text-gray-400 hover:text-gray-600 transition-colors">
                     <span className="text-xl font-bold">⋮</span>
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}

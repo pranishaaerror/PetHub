@@ -1,17 +1,11 @@
 import {
   useMutation,
 } from '@tanstack/react-query'
-import { login, signup } from './apis'
+import { getInfo } from './apis'
 
-export const useLogin = () => {
-   return useMutation({
-    mutationFn: login,
-    mutationKey:["login"]
-  })
-}
-export const useSignup = () => {
+export const useGetInfo = () => {
   return useMutation({
-    mutationFn : signup,
-    mutationKey : ['Signup']
+    mutationFn : getInfo,
+    mutationKey : ['getInfo']
   })
 }

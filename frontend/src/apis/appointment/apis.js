@@ -1,13 +1,25 @@
 import { axiosInstance } from "../axios";
 
-export const createAppointment = ({appointmentTime,userId,serviceId}) => axiosInstance.request({
+export const createAppointment = ({
+    appointmentTime,
+    serviceId,
+    ownerName,
+    contactNumber,
+    petName,
+    petType,
+    note,
+}) => axiosInstance.request({
     
     url:"/appointments",
     method:"POST",
     data:{
         appointmentTime,
-        userId,
-        serviceId
+        serviceId,
+        ownerName,
+        contactNumber,
+        petName,
+        petType,
+        note,
     }
     
 })
@@ -16,3 +28,10 @@ export const listAppointment = ()=> axiosInstance.request({
     method:"GET",
   
 })
+
+export const updateAppointmentStatus = ({ appointmentId, status }) =>
+  axiosInstance.request({
+    url: `/appointments/${appointmentId}/status`,
+    method: "PATCH",
+    data: { status },
+  });

@@ -1,12 +1,20 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { getAllUsers, getCurrentUser, updateCurrentUser } from "./apis";
 
-import { getAllUsers } from './apis'
-import {
-  useQuery,
-} from '@tanstack/react-query'
+export const useCurrentUser = () =>
+  useQuery({
+    queryFn: getCurrentUser,
+    queryKey: ["current-user"],
+  });
 
-export const useUsers = () => {
-   return useQuery({
-    queryFn: ()=> getAllUsers(),
-    queryKey:["get-users"]
-  })
-}
+export const useUpdateCurrentUser = () =>
+  useMutation({
+    mutationFn: updateCurrentUser,
+    mutationKey: ["update-current-user"],
+  });
+
+export const useUsers = () =>
+  useQuery({
+    queryFn: getAllUsers,
+    queryKey: ["get-users"],
+  });

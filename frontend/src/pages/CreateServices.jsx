@@ -2,18 +2,21 @@
 import { useState } from "react";
 import { useCreateServices } from "../apis/services/hooks";
 import { useNavigate } from "react-router-dom";
+import { Button } from "../components/ui/button";
 export const CreateSetvices = () => {
     const { mutateAsync, isPending } = useCreateServices()
     const [serviceName, setServiceName] = useState("");
+    const [serviceDescription, setServiceDescription] = useState("");
     const [servicePrice, setPrice] = useState("");
     const navigate = useNavigate()
     const handleSubmit = async (e) => {
         e.preventDefault();
         await mutateAsync({
             serviceName,
+            description: serviceDescription,
             price: servicePrice
         })
-        navigate("/services")
+        navigate("/admin/services")
     };
 
     return (
@@ -37,7 +40,21 @@ export const CreateSetvices = () => {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Service Price
+                            Description
+                        </label>
+                        <textarea
+                            value={serviceDescription}
+                            onChange={(e) => setServiceDescription(e.target.value)}
+                            placeholder="Enter service description"
+                            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            rows={3}
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Service Price (NPR)
                         </label>
                         <input
                             type="number"
@@ -48,13 +65,13 @@ export const CreateSetvices = () => {
                         />
                     </div>
 
-                    <button
+                    <Button
                         type="submit"
                         disabled={isPending}
                         className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
                     >
                         Add Service
-                    </button>
+                    </Button>
                 </form>
 
 

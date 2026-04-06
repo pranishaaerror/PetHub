@@ -1,144 +1,153 @@
-import jwt from 'jsonwebtoken';
-import express from 'express';
-import User from "../models/User.js";
-import bcrypt from "bcrypt";
-import nodemailer from "nodemailer"
-import crypto from 'node:crypto'
-import UserPasswordResetToken from '../models/UserPasswordResetToken.js';
+import express from "express";
+import {firebaseApp} from "../firebaseAdmin.js";
+import { verifyToken } from "../middleware/authMiddleware.js";
+import { getAuth } from "firebase-admin/auth";
+import { createHash, randomInt } from "crypto";
+import PasswordResetOtp from "../models/PasswordResetOtp.js";
+import { sendPasswordResetOtpEmail } from "../services/emailService.js";
+import { syncFirebaseUser } from "../services/currentUserService.js";
 
-const router = express.Router();
+export const authRouter = express.Router();
 
+const RESET_OTP_TTL_MS = 10 * 60 * 1000;
+const phonePattern = /^[+\d][\d\s-]{6,19}$/;
 
+const hashOtp = (otp) => createHash("sha256").update(otp).digest("hex");
 
-const JWT_SECRET = 'your-jwt-secret-key';
+//api/auth/me
+const handleSyncCurrentUser = async (req, res) => {
+  try {
+    const { id, email } = req.user;
+    const user = await syncFirebaseUser({ uid: id, email });
 
-router.post("/signup",async(req,res) => {
-    try {
-    const { name, email, password, } = req.body;
+    res.json(user);
+  } catch (error) {
+    console.error("Auth sync failed:", error);
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+};
 
-    // Check if email already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "Email already registered" });
+authRouter.get("/me", verifyToken, handleSyncCurrentUser);
+authRouter.post("/me", verifyToken, handleSyncCurrentUser);
+
+authRouter.patch("/profile", verifyToken, async (req, res) => {
+  try {
+    const { id, email } = req.user;
+    const displayName = (req.body.displayName ?? req.body.fullName ?? "").trim();
+    const contactNumber = (req.body.contactNumber ?? req.body.phoneNumber ?? "").trim();
+
+    if (!displayName || !contactNumber) {
+      return res.status(400).json({ message: "Full name and contact number are required." });
     }
 
-    // Hash password
-    // const bcrypt = (await import("bcrypt")).default;
-    const hashedPassword = await bcrypt.hash(password, 10);
+    if (!phonePattern.test(contactNumber)) {
+      return res.status(400).json({ message: "Please enter a valid contact number." });
+    }
 
-    // Create user
-    const newUser = new User({
-      name,
-      email,
-      password: hashedPassword,
-      // age,
-    });
+    const user = await syncFirebaseUser({ uid: id, email });
+    user.fullName = displayName;
+    user.displayName = displayName;
+    user.contactNumber = contactNumber;
+    user.phoneNumber = contactNumber;
+    await user.save();
 
-    await newUser.save();
+    await getAuth(firebaseApp).updateUser(id, { displayName });
 
-    return res.status(201).json({ message: "User created successfully" });
-  } catch (err) {
-    return res.status(500).json({ message: err });
+    res.json(user);
+  } catch (error) {
+    console.error("Profile update failed:", error);
+    res.status(500).json({ message: error.message || "Server error" });
   }
 });
 
+authRouter.post("/forgot-password", async (req, res) => {
+  try {
+    const email = (req.body.email ?? "").trim().toLowerCase();
 
-// Login route - generate token
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required." });
+    }
 
-  // Find user by email only
-  const user = await User.findOne({ email });
-  if (!user) {
-    return res.status(401).json({ message: 'Invalid credentials' });
-  }
+    const auth = getAuth(firebaseApp);
+    let firebaseUser = null;
 
-  // Compare hashed password
-  // const bcrypt = (await import("bcrypt")).default;
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    return res.status(401).json({ message: 'Invalid credentials' });
-  }
-
-  // Create payload \
-  const payload = {
-    id: user.id,
-    username: user.username
-  };
-
-  // Sign token
-  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
-
-  res.json({ message: 'Login successful', token });
-});
-
-function generateRandomHexString(length) {
-    // Each byte converts to 2 hex characters, so request half the desired length in bytes
-    const bytesLength = Math.ceil(length / 2); 
-    const randomBytes = crypto.randomBytes(bytesLength);
-    return randomBytes.toString('hex').slice(0, length); // Slice to ensure exact length if odd number requested
-}
-
-router.post('/forgot-password', async (req, res) => {
-  const { email } = req.body;
-  // Check if the email exists in your user database
-  const user = await User.findOne({email});
-  if (user) {
-    // Generate a reset token
-    const token =generateRandomHexString(10);
-    // Store the token with the user's email in a database or in-memory store
-    
-    const userToken = new UserPasswordResetToken({
-      
-      email,
-     token,
-    });
-     await userToken.save();
-
-
-    
-    // Send the reset token to the user's email
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: 'np03cs4s240022@heraldcollege.edu.np',
-        pass: process.env.GMAIL_APP_PASSWORD,
-      },
-    });
-    const mailOptions = {
-      from: 'np03cs4s240022@heraldcollege.edu.np',
-      to: email,
-      subject: 'Password Reset',
-      text: `Password Reset Token: ${token}`,
-    };
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.log(error);
-        res.status(500).send('Error sending email');
-      } else {
-        console.log(`Email sent: ${info.response}`);
-        res.status(200).send('Check your email for instructions on resetting your password');
+    try {
+      firebaseUser = await auth.getUserByEmail(email);
+    } catch (error) {
+      if (error.code !== "auth/user-not-found") {
+        throw error;
       }
+    }
+
+    await PasswordResetOtp.deleteMany({ email });
+
+    if (!firebaseUser) {
+      return res.json({
+        message: "If an account exists for this email, a reset OTP has been sent.",
+      });
+    }
+
+    const otp = String(randomInt(100000, 1000000));
+    await PasswordResetOtp.create({
+      email,
+      otpHash: hashOtp(otp),
+      expiresAt: new Date(Date.now() + RESET_OTP_TTL_MS),
     });
-  } else {
-    res.status(404).send('Email not found');
+
+    await sendPasswordResetOtpEmail({
+      to: email,
+      otp,
+      displayName: firebaseUser.displayName || email.split("@")[0],
+    });
+
+    res.json({ message: "Password reset OTP sent to your email." });
+  } catch (error) {
+    console.error("Forgot password request failed:", error);
+    res.status(500).json({ message: error.message || "Server error" });
   }
 });
 
-router.post("/reset-password",async (req,res) => {
-  const {password,token} = req.body;
-  const userToken= await UserPasswordResetToken.findOne({token});
-  if (userToken) {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await User.findOneAndUpdate({ email: userToken.email }, {password:hashedPassword},);
-    await UserPasswordResetToken.deleteOne({email:userToken.email});
-    res.status(200).send('Password updated successfully');
-  } else {
-    res.status(404).send('Invalid or expired token');
+authRouter.post("/reset-password", async (req, res) => {
+  try {
+    const email = (req.body.email ?? "").trim().toLowerCase();
+    const otp = (req.body.otp ?? "").trim();
+    const newPassword = (req.body.newPassword ?? "").trim();
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ message: "Email, OTP, and new password are required." });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters long." });
+    }
+
+    const otpRecord = await PasswordResetOtp.findOne({ email }).sort({ createdAt: -1 });
+
+    if (!otpRecord || otpRecord.usedAt || otpRecord.expiresAt < new Date()) {
+      return res.status(400).json({ message: "This OTP has expired. Please request a new one." });
+    }
+
+    if (otpRecord.attemptsLeft <= 0) {
+      await PasswordResetOtp.deleteMany({ email });
+      return res.status(400).json({ message: "Too many incorrect attempts. Please request a new OTP." });
+    }
+
+    if (otpRecord.otpHash !== hashOtp(otp)) {
+      otpRecord.attemptsLeft -= 1;
+      await otpRecord.save();
+      return res.status(400).json({ message: "Invalid OTP. Please try again." });
+    }
+
+    const auth = getAuth(firebaseApp);
+    const firebaseUser = await auth.getUserByEmail(email);
+
+    await auth.updateUser(firebaseUser.uid, { password: newPassword });
+    await auth.revokeRefreshTokens(firebaseUser.uid);
+    await PasswordResetOtp.deleteMany({ email });
+
+    res.json({ message: "Password reset successfully. Please log in again." });
+  } catch (error) {
+    console.error("Password reset failed:", error);
+    res.status(500).json({ message: error.message || "Server error" });
   }
-})
-export default router;
-
-
-
-
+});

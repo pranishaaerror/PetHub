@@ -1,18 +1,26 @@
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query'
-import { createAppointment, listAppointment} from './apis'
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createAppointment, getAppointments, updateAppointmentStatus, updateMyAppointment } from "./apis";
 
-export const useCreateAppointment = () => {
-   return useMutation({
+export const useAppointment = () =>
+  useQuery({
+    queryFn: getAppointments,
+    queryKey: ["get-appointment"],
+  });
+
+export const useCreateAppointment = () =>
+  useMutation({
     mutationFn: createAppointment,
-    mutationKey:["appointment"]
-  })
-}
-export const useAppointment = () => {
-   return useQuery({
-    queryFn: ()=> listAppointment(),
-    queryKey:["get-appointment"]
-  })
-}
+    mutationKey: ["create-appointment"],
+  });
+
+export const useUpdateAppointmentStatus = () =>
+  useMutation({
+    mutationFn: updateAppointmentStatus,
+    mutationKey: ["update-appointment-status"],
+  });
+
+export const useUpdateMyAppointment = () =>
+  useMutation({
+    mutationFn: updateMyAppointment,
+    mutationKey: ["update-my-appointment"],
+  });

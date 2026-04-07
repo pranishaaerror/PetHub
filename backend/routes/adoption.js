@@ -71,6 +71,28 @@ router.get("/", async (req, res) => {
 });
 
 
+router.get("/status/:status", async (req, res) => {
+  try {
+    const { status } = req.params;
+
+    if (!['Available', 'Pending', 'Adopted'].includes(status)) {
+      return res.status(400).json({
+        message: "Invalid status. Must be 'Available', 'Pending', or 'Adopted'",
+      });
+    }
+
+    const pets = await Adoption.find({ status }).sort({ intakeDate: -1 });
+
+    res.status(200).json({
+      message: `${status} pets retrieved successfully`,
+      count: pets.length,
+      pets,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+});
+
 router.get("/:id", async (req, res) => {
   try {
     const pet = await Adoption.findById(req.params.id);
@@ -151,28 +173,6 @@ router.delete("/:id", async (req, res) => {
     res.status(200).json({
       message: "Pet removed from adoption center successfully",
       pet: deletedPet,
-    });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-});
-
-router.get("/status/:status", async (req, res) => {
-  try {
-    const { status } = req.params;
-
-    if (!['Available', 'Pending', 'Adopted'].includes(status)) {
-      return res.status(400).json({
-        message: "Invalid status. Must be 'Available', 'Pending', or 'Adopted'",
-      });
-    }
-
-    const pets = await Adoption.find({ status }).sort({ intakeDate: -1 });
-
-    res.status(200).json({
-      message: `${status} pets retrieved successfully`,
-      count: pets.length,
-      pets,
     });
   } catch (err) {
     return res.status(500).json({ message: err.message });

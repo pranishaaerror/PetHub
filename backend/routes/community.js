@@ -78,4 +78,65 @@ router.post("/message", verifyToken, async (req, res) => {
   }
 });
 
+router.patch("/meetups/:meetupId", verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can update meetups." });
+    }
+
+    const allowed = ["title", "description", "type", "date", "time", "location", "hostName", "tags", "energyStyle", "approved"];
+    const update = {};
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) update[key] = req.body[key];
+    }
+
+    const meetup = await CommunityMeetup.findByIdAndUpdate(
+      req.params.meetupId,
+      update,
+      { new: true, runValidators: true }
+    );
+    if (!meetup) return res.status(404).json({ message: "Meetup not found." });
+    res.json(meetup);
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+});
+
+router.post("/meetups", verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can create meetups." });
+    }
+
+    const { title, description, type, date, time, location, hostName, tags, energyStyle } = req.body;
+    if (!title || !description || !type || !date || !time || !location || !hostName) {
+      return res.status(400).json({ message: "All required fields must be provided." });
+    }
+
+    const meetup = await CommunityMeetup.create({
+      title, description, type, date, time, location, hostName,
+      tags: tags ?? [],
+      energyStyle: energyStyle ?? "gentle",
+      approved: true,
+    });
+    res.status(201).json(meetup);
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+});
+
+router.delete("/meetups/:meetupId", verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can delete meetups." });
+    }
+
+    const meetup = await CommunityMeetup.findByIdAndDelete(req.params.meetupId);
+    if (!meetup) return res.status(404).json({ message: "Meetup not found." });
+    res.json({ message: "Meetup deleted successfully." });
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+});
+
 export default router;

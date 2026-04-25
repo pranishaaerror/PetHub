@@ -283,82 +283,6 @@ export const ProfilePage = () => {
         </Link>
       </div>
 
-      {/* ── BOOKINGS + ADOPTION ──────────────────────────────────────── */}
-      <section className="rounded-[28px] bg-white p-6 shadow-[0_6px_28px_rgba(45,45,45,0.07)] md:p-8">
-        <div className="mb-5 flex items-center gap-2">
-          <CalendarDays className="h-5 w-5 text-[#F5A623]" />
-          <h2 className="text-xl font-bold text-[#2D2D2D]">Booking history</h2>
-        </div>
-
-        <div className="grid gap-5 lg:grid-cols-2">
-
-          {/* appointments */}
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-widest text-[#B78331]">
-                Appointments
-              </p>
-              <Link
-                to="/appointments"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-[#F5A623] hover:underline"
-              >
-                View all <ArrowUpRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-
-            <div className="space-y-2.5">
-              {recentAppointments.length ? (
-                recentAppointments.map((a) => <AppointmentRow key={a._id} appointment={a} />)
-              ) : (
-                <div className="flex flex-col items-center gap-3 rounded-2xl bg-[#FAF6EF] py-8 text-center">
-                  <CalendarDays className="h-8 w-8 text-[#F5C978]" />
-                  <div>
-                    <p className="text-sm font-semibold text-[#2D2D2D]">No bookings yet</p>
-                    <p className="mt-1 text-xs text-[#9A8A6A]">
-                      <Link to="/services" className="font-semibold text-[#F5A623] hover:underline">
-                        Book a service
-                      </Link>{" "}
-                      to get started.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* adoption requests */}
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-widest text-[#B78331]">
-                Adoption requests
-              </p>
-              <Link
-                to="/dashboard/adoption"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-[#F5A623] hover:underline"
-              >
-                Gallery <ArrowUpRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-
-            <div className="space-y-2.5">
-              {recentAdoptionReqs.length ? (
-                recentAdoptionReqs.map((r) => <AdoptionRow key={r._id} request={r} />)
-              ) : (
-                <div className="flex flex-col items-center gap-3 rounded-2xl bg-[#FAF6EF] py-8 text-center">
-                  <HeartHandshake className="h-8 w-8 text-[#F5C978]" />
-                  <div>
-                    <p className="text-sm font-semibold text-[#2D2D2D]">No requests yet</p>
-                    <p className="mt-1 text-xs text-[#9A8A6A]">
-                      Admin decisions will appear here.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── EDIT PERSONAL INFO ───────────────────────────────────────── */}
       <section className="overflow-hidden rounded-[28px] bg-white shadow-[0_6px_28px_rgba(45,45,45,0.07)]">
         <div className="grid xl:grid-cols-[1fr_1fr]">
@@ -433,6 +357,82 @@ export const ProfilePage = () => {
                   <p className="text-sm text-[#5B544C]">{text}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── BOOKINGS + ADOPTION ──────────────────────────────────────── */}
+      <section className="rounded-[28px] bg-white p-6 shadow-[0_6px_28px_rgba(45,45,45,0.07)] md:p-8">
+        <div className="mb-5 flex items-center gap-2">
+          <CalendarDays className="h-5 w-5 text-[#F5A623]" />
+          <h2 className="text-xl font-bold text-[#2D2D2D]">Booking history</h2>
+        </div>
+
+        <div className="grid gap-5 lg:grid-cols-2">
+
+          {/* appointments */}
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#B78331]">
+                Appointments
+              </p>
+              <Link
+                to="/appointments"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[#F5A623] hover:underline"
+              >
+                View all <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+
+            <div className="space-y-2.5">
+              {recentAppointments.length ? (
+                recentAppointments.map((a) => <AppointmentRow key={a._id} appointment={a} />)
+              ) : (
+                <div className="flex flex-col items-center gap-3 rounded-2xl bg-[#FAF6EF] py-8 text-center">
+                  <CalendarDays className="h-8 w-8 text-[#F5C978]" />
+                  <div>
+                    <p className="text-sm font-semibold text-[#2D2D2D]">No bookings yet</p>
+                    <p className="mt-1 text-xs text-[#9A8A6A]">
+                      <Link to="/services" className="font-semibold text-[#F5A623] hover:underline">
+                        Book a service
+                      </Link>{" "}
+                      to get started.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* adoption requests */}
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#B78331]">
+                Adoption requests
+              </p>
+              <Link
+                to="/dashboard/adoption"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[#F5A623] hover:underline"
+              >
+                Gallery <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+
+            <div className="space-y-2.5">
+              {recentAdoptionReqs.length ? (
+                recentAdoptionReqs.map((r) => <AdoptionRow key={r._id} request={r} />)
+              ) : (
+                <div className="flex flex-col items-center gap-3 rounded-2xl bg-[#FAF6EF] py-8 text-center">
+                  <HeartHandshake className="h-8 w-8 text-[#F5C978]" />
+                  <div>
+                    <p className="text-sm font-semibold text-[#2D2D2D]">No requests yet</p>
+                    <p className="mt-1 text-xs text-[#9A8A6A]">
+                      Admin decisions will appear here.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

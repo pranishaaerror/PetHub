@@ -121,4 +121,54 @@ router.get("/", verifyToken, async (req, res) => {
   }
 });
 
+// Admin: update a user's role or disabled status
+router.patch("/:userId", verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can update users." });
+    }
+
+    const allowedRoles = ["admin", "user", "veterinarian", "groomer"];
+    const { role, disabled } = req.body;
+
+    const update = {};
+    if (role !== undefined) {
+      if (!allowedRoles.includes(role)) {
+        return res.status(400).json({ message: "Invalid role." });
+      }
+      update.role = role;
+    }
+    if (disabled !== undefined) {
+      update.disabled = Boolean(disabled);
+    }
+
+    if (Object.keys(update).length === 0) {
+      return res.status(400).json({ message: "Provide role or disabled to update." });
+    }
+
+    const user = await User.findByIdAndUpdate(req.params.userId, update, { new: true, runValidators: true });
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+});
+
+// Admin: delete a user
+router.delete("/:userId", verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can delete users." });
+    }
+
+    const user = await User.findByIdAndDelete(req.params.userId);
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    res.json({ message: "User deleted successfully." });
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+});
+
 export default router;

@@ -141,29 +141,31 @@ export const AdminDashboardPage = () => {
           </div>
         </section>
 
-        {/* What Changed Card */}
-        <section className="bg-gradient-to-br from-amber-50 to-white rounded-3xl shadow-xl border border-amber-100 p-6 md:p-8">
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold tracking-wide">
-            <BellRing className="w-3.5 h-3.5" />
-            What Changed
-          </span>
-          <h2 className="mt-4 text-2xl font-bold text-stone-800">Admin now behaves like a real PetHub workspace.</h2>
-          <div className="mt-6 space-y-3">
-            {[
-              "Admin lands in /admin after the same login form.",
-              "Booking status updates now notify the pet parent.",
-              "Adoption requests can be reviewed and updated from the admin queue.",
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-3 bg-white rounded-xl p-4 shadow-sm border border-amber-100 group hover:border-amber-200 transition-all"
-              >
-                <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 text-sm font-bold flex-shrink-0 mt-0.5">
-                  {i + 1}
-                </div>
-                <p className="text-stone-600 text-sm leading-relaxed">{item}</p>
-              </div>
-            ))}
+        {/* Today's Booking Pulse */}
+        <section className="relative overflow-hidden bg-gradient-to-br from-stone-800 to-stone-900 rounded-3xl shadow-xl p-6 md:p-8 text-white">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-amber-500/10 rounded-full blur-2xl" />
+          <div className="relative">
+            <div className="flex items-center gap-2">
+              <CalendarClock className="w-5 h-5 text-amber-400" />
+              <span className="text-sm font-semibold uppercase tracking-wider text-amber-300">Today's Booking Pulse</span>
+            </div>
+            <div className="mt-5 space-y-3">
+              {todayAppointments.length ? (
+                todayAppointments.map((appointment) => (
+                  <div key={appointment._id} className="bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/10">
+                    <p className="font-semibold text-white">
+                      {appointment.petName} · {appointment.serviceId?.serviceName || "Service"}
+                    </p>
+                    <p className="mt-1 text-sm text-amber-300">{formatWhen(appointment.appointmentTime)}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-stone-300 text-sm leading-relaxed">
+                  No pending appointments right now. As bookings are created, today's operational
+                  pulse will appear here.
+                </p>
+              )}
+            </div>
           </div>
         </section>
       </div>
@@ -244,33 +246,7 @@ export const AdminDashboardPage = () => {
             </div>
           </section>
 
-          {/* Today's Appointments */}
-          <section className="relative overflow-hidden bg-gradient-to-br from-stone-800 to-stone-900 rounded-3xl shadow-xl p-6 text-white">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-amber-500/10 rounded-full blur-2xl" />
-            <div className="relative">
-              <div className="flex items-center gap-2">
-                <CalendarClock className="w-5 h-5 text-amber-400" />
-                <span className="text-sm font-semibold uppercase tracking-wider text-amber-300">Today's Booking Pulse</span>
-              </div>
-              <div className="mt-5 space-y-3">
-                {todayAppointments.length ? (
-                  todayAppointments.map((appointment) => (
-                    <div key={appointment._id} className="bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/10">
-                      <p className="font-semibold text-white">
-                        {appointment.petName} · {appointment.serviceId?.serviceName || "Service"}
-                      </p>
-                      <p className="mt-1 text-sm text-amber-300">{formatWhen(appointment.appointmentTime)}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-stone-300 text-sm leading-relaxed">
-                    No pending appointments right now. As bookings are created, today's operational
-                    pulse will appear here.
-                  </p>
-                )}
-              </div>
-            </div>
-          </section>
+          {/* Today's Appointments — moved to top row */}
         </div>
       </div>
     </div>

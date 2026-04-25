@@ -91,21 +91,24 @@ export const mapStatusLabel = (status) => {
   return status;
 };
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL?.replace("/api", "") || "http://localhost:5000";
+
+const resolveImage = (path) => {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  return `${BACKEND_URL}${path}`;
+};
+
 export const decorateAdoptionPet = (pet) => {
-  if (!pet) {
-    return null;
-  }
+  if (!pet) return null;
 
   const seed = hashValue(pet._id || `${pet.petName}-${pet.breed}`);
-  const image =
-    pet.imageGallery?.[0] ||
-    pet.photoUrl ||
-    pet.image ||
-    galleryImages[seed % galleryImages.length];
+  const rawImage = pet.imageGallery?.[0] || pet.photoUrl || pet.image || null;
+  const image = resolveImage(rawImage);
   const accent = carouselPalette[seed % carouselPalette.length];
   const petName = pet.petName || pet.name || "Pet";
-  const summary = pet.description || summaries[seed % summaries.length];
-  const location = pet.location || locations[seed % locations.length];
+  const summary = pet.description || null;
+  const location = pet.location || null;
   const temperamentList = Array.isArray(pet.temperament) ? pet.temperament : [];
 
   return {
@@ -117,10 +120,8 @@ export const decorateAdoptionPet = (pet) => {
     accent,
     location,
     summary,
-    temperament: temperamentList.length
-      ? temperamentList.join(", ")
-      : temperaments[seed % temperaments.length],
-    careNote: careNotes[seed % careNotes.length],
+    temperament: temperamentList.length ? temperamentList.join(", ") : null,
+    careNote: pet.careNote || null,
   };
 };
 

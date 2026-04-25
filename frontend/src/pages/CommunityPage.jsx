@@ -17,7 +17,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
 import { useQueryClient } from "@tanstack/react-query";
-import { communityPlaydates, communityStats, featuredMeetup } from "../utils/communityJourneys";
+import { communityPlaydates, featuredMeetup } from "../utils/communityJourneys";
 import { useCommunityMeetups } from "../apis/community/hooks";
 import { useCurrentUser, useUpdateCurrentUser } from "../apis/users/hooks";
 import { useAuth } from "../context/AuthContext";
@@ -37,6 +37,12 @@ export const CommunityPage = () => {
 
   const user = userResponse?.data;
   const approvedMeetups = meetupsResponse?.data ?? [];
+
+  const liveStats = [
+    { value: String(approvedMeetups.length), label: "Upcoming community events" },
+    { value: String(approvedMeetups.reduce((sum, m) => sum + (m.attendees?.length ?? 0), 0)), label: "RSVPs confirmed" },
+    { value: String(new Set(approvedMeetups.map(m => m.location)).size), label: "Active locations" },
+  ];
 
   const interestForm = useForm({
     resolver: zodResolver(interestSchema),
@@ -72,10 +78,8 @@ export const CommunityPage = () => {
   return (
     <div className="cm-root min-h-screen bg-[#F4EAD9]">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=DM+Sans:wght@300;400;500;600;700&display=swap');
-
-        .cm-root { font-family: 'DM Sans', sans-serif; color: #1A1A1A; }
-        .cm-serif { font-family: 'Fraunces', Georgia, serif; }
+        .cm-root { font-family: inherit; color: #1A1A1A; }
+        .cm-serif { font-family: inherit; }
 
         /* ── HERO ── */
         .cm-hero {
@@ -123,7 +127,6 @@ export const CommunityPage = () => {
         }
 
         .cm-hero-title {
-          font-family: 'Fraunces', Georgia, serif;
           font-size: clamp(36px, 5vw, 64px);
           font-weight: 800;
           line-height: 1.1;
@@ -207,7 +210,7 @@ export const CommunityPage = () => {
           width: 100%; background: #F7F3ED;
           border: 1.5px solid transparent; border-radius: 14px;
           padding: 13px 16px; font-size: 14px;
-          font-family: 'DM Sans', sans-serif; color: #1A1A1A;
+          font-family: inherit; color: #1A1A1A;
           outline: none; transition: all 0.2s;
         }
         .cm-input:focus { border-color: #F5A623; box-shadow: 0 0 0 4px rgba(245,166,35,0.1); }
@@ -292,7 +295,7 @@ export const CommunityPage = () => {
 
       {/* ── STATS STRIP ── */}
       <div className="cm-stats-strip">
-        {communityStats.map((stat, i) => {
+        {liveStats.map((stat, i) => {
           const palette = [
             { bg: "#FFF0D6", color: "#F5A623", Ic: UsersRound },
             { bg: "#E8F5E9", color: "#43A047", Ic: CheckCircle2 },
@@ -316,97 +319,46 @@ export const CommunityPage = () => {
       {/* ── BODY CONTENT ── */}
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
 
-        {/* Community Profile + Approved Events */}
-        <div className="grid gap-6 lg:grid-cols-5">
-
-          {/* Community Profile */}
-          <div className="lg:col-span-2">
-            <div className="cm-card p-7">
-              <span className="cm-chip">Your Community Profile</span>
-              <h2 className="cm-serif mt-4 text-2xl font-bold">How do you want to connect?</h2>
-              <p className="mt-2 text-sm leading-relaxed text-[#6B6B6B]">
-                Share a few details so we can match you with the right meetups and pet parents nearby.
-              </p>
-
-              {currentUser ? (
-                <form onSubmit={onSaveInterest} className="mt-6 space-y-5">
-                  <div>
-                    <label className="cm-label">Pet Name</label>
-                    <input {...interestForm.register("petName")} className="cm-input" placeholder="Luna, Max, Bella..." />
-                  </div>
-                  <div>
-                    <label className="cm-label">Address or Neighborhood</label>
-                    <input {...interestForm.register("address")} className="cm-input" placeholder="e.g. Thamel, Kathmandu" />
-                  </div>
-                  <div>
-                    <label className="cm-label">What are you interested in?</label>
-                    <select {...interestForm.register("interestType")} className="cm-input">
-                      <option value="">Select an option</option>
-                      <option value="meetups">Casual meetups</option>
-                      <option value="events">Organized events</option>
-                      <option value="playdates">Playdates</option>
-                      <option value="training">Training &amp; classes</option>
-                      <option value="charity">Charity &amp; adoption walks</option>
-                    </select>
-                  </div>
-                  <button type="submit" disabled={isSavingInterest} className="cm-btn-primary w-full justify-center">
-                    {isSavingInterest ? "Saving…" : "Save Community Preferences"}
-                  </button>
-                </form>
-              ) : (
-                <div className="mt-6 rounded-2xl bg-[#F7F3ED] p-6 text-center">
-                  <p className="text-sm text-[#6B6B6B]">Sign in to personalize your community experience.</p>
-                  <Link to={`/login?redirect=${encodeURIComponent("/community")}`} className="cm-btn-primary mt-4 inline-flex">
-                    Sign in to continue
-                  </Link>
-                </div>
-              )}
+        {/* Approved Events */}
+        <div className="cm-card p-7">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="cm-chip">Approved Events</span>
+              <h2 className="cm-serif mt-3 text-2xl font-bold">Curated by PetHub</h2>
+            </div>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FFF0D6]">
+              <Shield className="h-5 w-5 text-[#F5A623]" />
             </div>
           </div>
+          <p className="mt-2 text-sm text-[#6B6B6B]">Only high-quality, admin-approved listings appear here.</p>
 
-          {/* Approved Events */}
-          <div className="lg:col-span-3">
-            <div className="cm-card p-7">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="cm-chip">Approved Events</span>
-                  <h2 className="cm-serif mt-3 text-2xl font-bold">Curated by PetHub</h2>
+          <div className="mt-6 space-y-3">
+            {approvedMeetups.length > 0 ? (
+              approvedMeetups.map((m) => (
+                <div key={m._id} className="meetup-row">
+                  <h3 className="font-semibold text-[#1A1A1A]">{m.title}</h3>
+                  <p className="mt-1 text-sm text-[#6B6B6B] line-clamp-2">{m.description}</p>
+                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-[#8B7B66]">
+                    <span className="flex items-center gap-1.5">
+                      <CalendarHeart className="h-3.5 w-3.5 text-[#F5A623]" />
+                      {m.date} · {m.time}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-[#F5A623]" />
+                      {m.location}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between">
+                    <p className="text-xs text-[#B78331]">Host · {m.hostName}</p>
+                    <Link to={`/community/meetups/${m._id || m.slug}`} className="flex items-center gap-1 text-xs font-600 text-[#C87D2A] hover:text-[#A56A22]">
+                      View details <ArrowUpRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
                 </div>
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FFF0D6]">
-                  <Shield className="h-5 w-5 text-[#F5A623]" />
-                </div>
-              </div>
-              <p className="mt-2 text-sm text-[#6B6B6B]">Only high-quality, admin-approved listings appear here.</p>
-
-              <div className="mt-6 space-y-3">
-                {approvedMeetups.length > 0 ? (
-                  approvedMeetups.map((m) => (
-                    <div key={m._id} className="meetup-row">
-                      <h3 className="font-semibold text-[#1A1A1A]">{m.title}</h3>
-                      <p className="mt-1 text-sm text-[#6B6B6B] line-clamp-2">{m.description}</p>
-                      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-[#8B7B66]">
-                        <span className="flex items-center gap-1.5">
-                          <CalendarHeart className="h-3.5 w-3.5 text-[#F5A623]" />
-                          {m.date} · {m.time}
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <MapPin className="h-3.5 w-3.5 text-[#F5A623]" />
-                          {m.location}
-                        </span>
-                      </div>
-                      <div className="mt-3 flex items-center justify-between">
-                        <p className="text-xs text-[#B78331]">Host · {m.hostName}</p>
-                        <Link to={`/community/meetups/${m._id || m.slug}`} className="flex items-center gap-1 text-xs font-600 text-[#C87D2A] hover:text-[#A56A22]">
-                          View details <ArrowUpRight className="h-3.5 w-3.5" />
-                        </Link>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="py-8 text-center text-sm text-[#9B9B9B]">No approved events yet — check back soon!</p>
-                )}
-              </div>
-            </div>
+              ))
+            ) : (
+              <p className="py-8 text-center text-sm text-[#9B9B9B]">No approved events yet — check back soon!</p>
+            )}
           </div>
         </div>
 

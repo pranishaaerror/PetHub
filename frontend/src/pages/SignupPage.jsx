@@ -10,8 +10,7 @@ import { app } from "../Firebase";
 import { AuthSplitLayout } from "../components/AuthSplitLayout";
 import Header from "./Header";
 import Footer from "./Footer";
-import { initiateEmailSignup, setAccountType } from "../apis/auth/apis";
-import { useAuth } from "../context/AuthContext";
+import { initiateEmailSignup } from "../apis/auth/apis";
 import {
   clearStoredAuth,
   establishUserSession,
@@ -24,8 +23,7 @@ import { getPasswordStrength } from "../utils/passwordStrength";
 
 import { AiOutlineEye, AiOutlineEyeInvisible, AiOutlineInfoCircle } from "react-icons/ai";
 import { FcGoogle } from "react-icons/fc";
-import { MdPets, MdErrorOutline } from "react-icons/md";
-import { RiStethoscopeLine } from "react-icons/ri";
+import { MdErrorOutline } from "react-icons/md";
 
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
@@ -61,7 +59,6 @@ const FieldError = ({ msg }) =>
 export const SignupPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { refreshUserProfile } = useAuth();
   const requestedRedirect = new URLSearchParams(location.search).get("redirect");
   const loginHref = !requestedRedirect
     ? "/login"
@@ -69,7 +66,6 @@ export const SignupPage = () => {
 
   const [showPwd, setShowPwd] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [accountRole, setAccountRole] = useState("user");
   const [submitError, setSubmitError] = useState("");
 
   const {
@@ -95,7 +91,7 @@ export const SignupPage = () => {
         password: values.password,
         fullName: values.fullName.trim(),
         contactNumber: values.phoneNumber?.trim() ?? "",
-        role: accountRole,
+        role: "user",
       });
       toast.success("Check your email for a verification code.");
       navigate("/verify-signup", {
@@ -120,8 +116,6 @@ export const SignupPage = () => {
         throw new Error("Admin accounts are login-only. Use the normal login page.");
       }
       await establishUserSession(auth, cred.user);
-      await setAccountType({ role: accountRole });
-      await refreshUserProfile(true);
       toast.success("Welcome to PetHub. Continue with onboarding next.");
       navigate(resolveRedirectPath(requestedRedirect, getAppHomePath()));
     } catch (err) {
@@ -138,19 +132,19 @@ export const SignupPage = () => {
         <Header compact />
 
         <AuthSplitLayout sideLabel="PetHub" embedded fitViewport>
-          <div className="mx-auto w-full max-w-xl rounded-[28px] bg-white/95 p-6 shadow-[0_24px_60px_rgba(45,45,45,0.08)] sm:p-8">
-            <header className="space-y-2">
-              <h1 className="text-2xl font-bold tracking-tight text-[#2D2D2D] sm:text-[1.75rem]">
+          <div className="mx-auto w-full max-w-xl rounded-[28px] bg-white/95 p-5 shadow-[0_24px_60px_rgba(45,45,45,0.08)] sm:p-6">
+            <header className="space-y-1">
+              <h1 className="text-2xl font-bold tracking-tight text-[#2D2D2D]">
                 Create your account
               </h1>
-              <p className="text-sm leading-relaxed text-[#7A6A58] sm:text-[15px]">
+              <p className="text-sm leading-relaxed text-[#7A6A58]">
                 Join PetHub to book care, track health records, and connect with your community.
               </p>
             </header>
 
             {submitError ? (
               <div
-                className="mt-6 flex items-start gap-2.5 rounded-[16px] border border-[#F0C4B8] bg-[#FFF3F0] px-4 py-3.5"
+                className="mt-4 flex items-start gap-2.5 rounded-[16px] border border-[#F0C4B8] bg-[#FFF3F0] px-4 py-3"
                 role="alert"
               >
                 <MdErrorOutline className="mt-0.5 shrink-0 text-[#C45F3E]" size={18} />
@@ -158,13 +152,10 @@ export const SignupPage = () => {
               </div>
             ) : null}
 
-            <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
-              <div className="grid gap-5 sm:grid-cols-2">
+            <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-3.5">
+              <div className="grid gap-3.5 sm:grid-cols-2">
                 <div>
-                  <label
-                    htmlFor="signup-fullName"
-                    className="mb-2 block text-sm font-semibold text-[#5B544C]"
-                  >
+                  <label htmlFor="signup-fullName" className="mb-1.5 block text-sm font-semibold text-[#5B544C]">
                     Full name
                   </label>
                   <input
@@ -178,10 +169,7 @@ export const SignupPage = () => {
                   <FieldError msg={errors.fullName?.message} />
                 </div>
                 <div>
-                  <label
-                    htmlFor="signup-phone"
-                    className="mb-2 block text-sm font-semibold text-[#5B544C]"
-                  >
+                  <label htmlFor="signup-phone" className="mb-1.5 block text-sm font-semibold text-[#5B544C]">
                     Phone <span className="font-normal text-[#9A8464]">(optional)</span>
                   </label>
                   <input
@@ -197,59 +185,8 @@ export const SignupPage = () => {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-[#F0E4D4] bg-[#FFFBF5] p-4 sm:p-5">
-                <p className="mb-3 text-sm font-semibold text-[#5B544C]">I am signing up as</p>
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <label
-                    className={`flex flex-1 cursor-pointer items-center gap-3 rounded-2xl border-2 px-4 py-3.5 text-sm font-semibold transition-all select-none ${
-                      accountRole === "user"
-                        ? "border-[#F5C062] bg-white text-[#C77E1D] shadow-sm"
-                        : "border-transparent bg-white/80 text-[#6B5C4A] hover:border-[#F5C062]/50"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="accountRole"
-                      value="user"
-                      checked={accountRole === "user"}
-                      onChange={() => setAccountRole("user")}
-                      className="sr-only"
-                    />
-                    <MdPets
-                      size={20}
-                      className={`shrink-0 ${accountRole === "user" ? "text-[#E8920A]" : "text-[#BDB09D]"}`}
-                    />
-                    Pet parent
-                  </label>
-                  <label
-                    className={`flex flex-1 cursor-pointer items-center gap-3 rounded-2xl border-2 px-4 py-3.5 text-sm font-semibold transition-all select-none ${
-                      accountRole === "veterinarian"
-                        ? "border-[#F5C062] bg-white text-[#C77E1D] shadow-sm"
-                        : "border-transparent bg-white/80 text-[#6B5C4A] hover:border-[#F5C062]/50"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="accountRole"
-                      value="veterinarian"
-                      checked={accountRole === "veterinarian"}
-                      onChange={() => setAccountRole("veterinarian")}
-                      className="sr-only"
-                    />
-                    <RiStethoscopeLine
-                      size={20}
-                      className={`shrink-0 ${accountRole === "veterinarian" ? "text-[#E8920A]" : "text-[#BDB09D]"}`}
-                    />
-                    Veterinarian
-                  </label>
-                </div>
-              </div>
-
               <div>
-                <label
-                  htmlFor="signup-email"
-                  className="mb-2 block text-sm font-semibold text-[#5B544C]"
-                >
+                <label htmlFor="signup-email" className="mb-1.5 block text-sm font-semibold text-[#5B544C]">
                   Email
                 </label>
                 <input
@@ -264,12 +201,9 @@ export const SignupPage = () => {
                 <FieldError msg={errors.email?.message} />
               </div>
 
-              <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid gap-3.5 sm:grid-cols-2">
                 <div>
-                  <label
-                    htmlFor="signup-password"
-                    className="mb-2 block text-sm font-semibold text-[#5B544C]"
-                  >
+                  <label htmlFor="signup-password" className="mb-1.5 block text-sm font-semibold text-[#5B544C]">
                     Password
                   </label>
                   <div className="relative">
@@ -289,16 +223,12 @@ export const SignupPage = () => {
                       className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-[#9A8464] transition hover:bg-[#F8F1E6]"
                       onClick={() => setShowPwd((p) => !p)}
                     >
-                      {showPwd ? (
-                        <AiOutlineEyeInvisible size={20} />
-                      ) : (
-                        <AiOutlineEye size={20} />
-                      )}
+                      {showPwd ? <AiOutlineEyeInvisible size={20} /> : <AiOutlineEye size={20} />}
                     </button>
                   </div>
                   <FieldError msg={errors.password?.message} />
                   {watch("password") ? (
-                    <div className="mt-2 flex gap-1" aria-hidden>
+                    <div className="mt-1.5 flex gap-1" aria-hidden>
                       {[0, 1, 2, 3, 4].map((i) => (
                         <span
                           key={i}
@@ -312,10 +242,7 @@ export const SignupPage = () => {
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="signup-confirm"
-                    className="mb-2 block text-sm font-semibold text-[#5B544C]"
-                  >
+                  <label htmlFor="signup-confirm" className="mb-1.5 block text-sm font-semibold text-[#5B544C]">
                     Confirm password
                   </label>
                   <div className="relative">
@@ -335,31 +262,27 @@ export const SignupPage = () => {
                       className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-[#9A8464] transition hover:bg-[#F8F1E6]"
                       onClick={() => setShowConfirm((p) => !p)}
                     >
-                      {showConfirm ? (
-                        <AiOutlineEyeInvisible size={20} />
-                      ) : (
-                        <AiOutlineEye size={20} />
-                      )}
+                      {showConfirm ? <AiOutlineEyeInvisible size={20} /> : <AiOutlineEye size={20} />}
                     </button>
                   </div>
                   <FieldError msg={errors.confirmPassword?.message} />
                 </div>
               </div>
 
-              <p className="flex items-start gap-2 text-sm text-[#7A6A58]">
-                <AiOutlineInfoCircle className="mt-0.5 shrink-0 text-[#C77E1D]" size={16} />
+              <p className="flex items-start gap-2 text-xs text-[#7A6A58]">
+                <AiOutlineInfoCircle className="mt-0.5 shrink-0 text-[#C77E1D]" size={14} />
                 Use uppercase, lowercase, a number, and a symbol for a stronger password.
               </p>
 
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="pet-button-primary h-12 w-full border-0 text-[15px] disabled:cursor-not-allowed disabled:opacity-55"
+                className="pet-button-primary h-11 w-full border-0 text-[15px] disabled:cursor-not-allowed disabled:opacity-55"
               >
                 {isSubmitting ? "Creating your account…" : "Create account"}
               </Button>
 
-              <div className="flex items-center gap-3 text-xs font-medium uppercase tracking-[0.12em] text-[#9A8464] sm:text-sm sm:normal-case sm:tracking-normal">
+              <div className="flex items-center gap-3 text-xs font-medium text-[#9A8464]">
                 <span className="h-px flex-1 bg-[#E4D3BA]" />
                 <span className="shrink-0">or continue with</span>
                 <span className="h-px flex-1 bg-[#E4D3BA]" />
@@ -368,14 +291,14 @@ export const SignupPage = () => {
               <button
                 type="button"
                 onClick={handleGoogleSignup}
-                className="pet-button-secondary flex h-12 w-full items-center justify-center gap-2 border border-[#E8D9C4] text-[15px] font-semibold hover:border-[#F5C062] hover:bg-[#FFFBF5]"
+                className="pet-button-secondary flex h-11 w-full items-center justify-center gap-2 border border-[#E8D9C4] text-[15px] font-semibold hover:border-[#F5C062] hover:bg-[#FFFBF5]"
               >
                 <FcGoogle size={20} />
                 Continue with Google
               </button>
             </form>
 
-            <p className="mt-8 text-center text-sm text-[#6B6B6B]">
+            <p className="mt-4 text-center text-sm text-[#6B6B6B]">
               Already have an account?{" "}
               <Link to={loginHref} className="font-semibold text-[#C77E1D] hover:underline">
                 Log in

@@ -47,9 +47,11 @@ export const ProviderDashboardPage = () => {
           <Link to={`${base}/bookings`} className="pet-button-primary">
             Manage {isVet ? "appointments" : "bookings"}
           </Link>
-          <Link to={`${base}/payments`} className="pet-button-secondary">
-            View earnings
-          </Link>
+          {!isVet && (
+            <Link to={`${base}/payments`} className="pet-button-secondary">
+              View earnings
+            </Link>
+          )}
         </div>
       </div>
 

@@ -1,10 +1,7 @@
-import { useState } from 'react';
 import { useAdoption } from '../apis/adoption/hooks';
 import { Link } from 'react-router-dom';
 import {
   HeartHandshake,
-  Search,
-  SlidersHorizontal,
   MapPin,
   Calendar,
   Venus,
@@ -54,28 +51,16 @@ const PASTEL_PAIRS = [
 
 export const Adoption = () => {
   const { data, isLoading, isError } = useAdoption();
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('all');
 
   const pets = data?.data?.pets ?? [];
-
-  const filtered = pets.filter((pet) => {
-    const matchesSearch =
-      pet.petName?.toLowerCase().includes(search.toLowerCase()) ||
-      pet.breed?.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter =
-      filter === 'all' || pet.status?.toLowerCase() === filter;
-    return matchesSearch && matchesFilter;
-  });
+  const filtered = pets;
 
   return (
     <div
       className="min-h-screen px-4 py-6 sm:px-6 lg:px-8"
-      style={{ fontFamily: "'DM Sans', sans-serif", color: '#1A1A1A' }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap');
-        .adopt-serif { font-family: 'Fraunces', Georgia, serif; }
+        .adopt-serif { font-family: inherit; }
         .pet-card {
           background: #fff;
           border-radius: 24px;
@@ -144,39 +129,6 @@ export const Adoption = () => {
               </div>
             </div>
           )}
-        </div>
-
-        {/* ── SEARCH + FILTERS ── */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#C28C3B]" />
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or breed…"
-              style={{
-                width: '100%', paddingLeft: '40px', paddingRight: '16px',
-                paddingTop: '12px', paddingBottom: '12px',
-                borderRadius: '16px', border: '1.5px solid rgba(0,0,0,0.09)',
-                background: '#fff', fontSize: '14px', outline: 'none',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
-                fontFamily: "'DM Sans', sans-serif",
-              }}
-            />
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <SlidersHorizontal className="h-4 w-4 text-[#9B9B9B] shrink-0" />
-            {['all', 'available', 'pending', 'adopted'].map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`filter-pill ${filter === f ? 'active' : ''}`}
-              >
-                {f.charAt(0).toUpperCase() + f.slice(1)}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* ── LOADING ── */}

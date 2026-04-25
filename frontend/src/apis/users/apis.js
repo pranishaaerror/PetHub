@@ -34,3 +34,16 @@ export const getAllUsers = () =>
     url: "/users",
     method: "GET",
   });
+
+export const adminUpdateUser = ({ userId, role, disabled }) =>
+  axiosInstance.request({
+    url: `/users/${userId}`,
+    method: "PATCH",
+    data: { role, disabled },
+  });
+
+export const adminDeleteUser = ({ userId }) =>
+  axiosInstance.request({
+    url: `/users/${userId}`,
+    method: "DELETE",
+  });

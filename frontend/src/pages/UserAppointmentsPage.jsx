@@ -87,10 +87,8 @@ export const UserAppointmentsPage = () => {
   return (
     <div className="min-h-screen bg-[#FAFAF8] px-4 py-6 sm:px-6 lg:px-8">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap');
-
-        .ap-root  { font-family: 'DM Sans', sans-serif; color: #1A1A1A; }
-        .ap-serif { font-family: 'Fraunces', Georgia, serif; }
+        .ap-root  { font-family: inherit; color: #1A1A1A; }
+        .ap-serif { font-family: inherit; }
 
         .ap-card {
           background: #fff;
@@ -157,7 +155,7 @@ export const UserAppointmentsPage = () => {
           border-radius: 12px;
           padding: 10px 14px;
           font-size: 13px;
-          font-family: 'DM Sans', sans-serif;
+          font-family: inherit;
           color: #1A1A1A;
           outline: none;
           transition: border-color 0.2s, box-shadow 0.2s;

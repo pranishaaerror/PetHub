@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   createAdoptionRequest,
+  deleteAdoptionRequest,
   getMyAdoptionRequests,
   updateAdoptionRequestStatus,
 } from "./apis";
@@ -21,4 +22,10 @@ export const useUpdateAdoptionRequestStatus = () =>
   useMutation({
     mutationFn: updateAdoptionRequestStatus,
     mutationKey: ["update-adoption-request-status"],
+  });
+
+export const useDeleteAdoptionRequest = () =>
+  useMutation({
+    mutationFn: deleteAdoptionRequest,
+    mutationKey: ["delete-adoption-request"],
   });

@@ -164,10 +164,8 @@ export const DashboardPage = () => {
   return (
     <div className="min-h-screen bg-[#FAFAF8] px-4 py-6 sm:px-6 lg:px-8">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap');
-
-        .dash-root { font-family: 'DM Sans', sans-serif; }
-        .dash-serif { font-family: 'Fraunces', Georgia, serif; }
+        .dash-root { font-family: inherit; }
+        .dash-serif { font-family: inherit; }
 
         .card {
           background: #ffffff;
@@ -256,7 +254,7 @@ export const DashboardPage = () => {
           border-radius: 50%;
         }
 
-        .snapshot-value { font-family: 'Fraunces', Georgia, serif; }
+        .snapshot-value { font-family: inherit; }
 
         @media (max-width: 640px) {
           .btn-primary, .btn-secondary { font-size: 12px; padding: 9px 14px; }
@@ -267,7 +265,7 @@ export const DashboardPage = () => {
 
         {/* ── HERO SECTION ── */}
         <div className="card hero-gradient p-5 sm:p-7 lg:p-9">
-          <div className="grid gap-8 lg:grid-cols-[1.4fr_0.6fr]">
+          <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
 
             {/* Left: greeting + actions + snapshot */}
             <div className="space-y-6">
@@ -327,36 +325,36 @@ export const DashboardPage = () => {
             {/* Right: Pet profile card */}
             <div>
               {primaryPet ? (
-                <div className="card h-full p-5">
+                <div className="card h-full p-6">
                   <div className="flex items-center justify-between">
                     <span className="chip">Pet Profile</span>
                     <PawPrint className="h-5 w-5 text-[#F5A623]" />
                   </div>
-                  <h2 className="dash-serif mt-3 text-2xl font-700 text-[#1A1A1A]">{primaryPet.name}</h2>
+                  <h2 className="dash-serif mt-3 text-3xl font-700 text-[#1A1A1A]">{primaryPet.name}</h2>
 
                   <div className="mt-4 overflow-hidden rounded-2xl bg-[#FFF0D6]">
                     {primaryPet.photoUrl ? (
                       <img
                         src={primaryPet.photoUrl}
                         alt={primaryPet.name}
-                        className="h-44 w-full object-cover"
+                        className="h-64 w-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-44 items-center justify-center">
-                        <PawPrint className="h-12 w-12 text-[#F5A623] opacity-40" />
+                      <div className="flex h-64 items-center justify-center">
+                        <PawPrint className="h-14 w-14 text-[#F5A623] opacity-40" />
                       </div>
                     )}
                   </div>
 
-                  <div className="mt-4 grid grid-cols-3 gap-2">
+                  <div className="mt-5 grid grid-cols-3 gap-3">
                     {[
                       { label: "Breed", value: primaryPet.breed },
                       { label: "Health", value: primaryPet.vaccinationStatus?.trim() || "See records" },
                       { label: "Plan", value: primaryPet.planType || "Premium" },
                     ].map((item) => (
-                      <div key={item.label} className="rounded-xl bg-[#FAFAF8] p-3 text-center">
+                      <div key={item.label} className="rounded-xl bg-[#FAFAF8] px-3 py-4 text-center">
                         <p className="text-[10px] font-600 uppercase tracking-wider text-[#9B9B9B]">{item.label}</p>
-                        <p className="mt-1 text-sm font-700 text-[#1A1A1A] leading-tight">{item.value}</p>
+                        <p className="mt-1.5 text-sm font-700 text-[#1A1A1A] leading-snug break-words">{item.value}</p>
                       </div>
                     ))}
                   </div>

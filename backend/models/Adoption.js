@@ -12,11 +12,7 @@ const adoptionSchema = new mongoose.Schema(
       default: null,
       trim: true,
     },
-    species: {
-      type: String,
-      default: "",
-      trim: true,
-    },
+  
     breed: {
       type: String,
       required: true,
@@ -58,11 +54,7 @@ const adoptionSchema = new mongoose.Schema(
       default: "PetHub Care Lounge",
       trim: true,
     },
-    adoptionFee: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
+   
     imageGallery: {
       type: [String],
       default: [],

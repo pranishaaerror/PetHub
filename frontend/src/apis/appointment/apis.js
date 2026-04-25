@@ -26,3 +26,9 @@ export const updateMyAppointment = ({ appointmentId, status, appointmentTime }) 
     method: "PATCH",
     data: { status, appointmentTime },
   });
+
+export const deleteAppointment = (appointmentId) =>
+  axiosInstance.request({
+    url: `/appointments/${appointmentId}`,
+    method: "DELETE",
+  });

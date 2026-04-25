@@ -4,31 +4,17 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
-import {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut,
-} from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup, signOut, } from "firebase/auth";
 import { app } from "../Firebase";
 import { AuthSplitLayout } from "../components/AuthSplitLayout";
 import { Button } from "../components/Button";
 import Header from "./Header";
 import Footer from "./Footer";
-import {
-  clearStoredAuth,
-  establishUserSession,
-  getAppHomePath,
-  isAdminEmail,
-  resolveRedirectPath,
-} from "../utils/authSession";
+import {clearStoredAuth,establishUserSession,getAppHomePath,isAdminEmail,resolveRedirectPath,} from "../utils/authSession";
 import { getAuthErrorMessage } from "../utils/authErrors";
-
-import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
+import { Eye, EyeOff, AlertCircle, ArrowLeft } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
-import { IoArrowBack } from "react-icons/io5";
-import { MdErrorOutline } from "react-icons/md";
+import { MdWavingHand } from "react-icons/md";
 
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
@@ -52,9 +38,11 @@ export const LoginPage = () => {
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState("");
+
   const requestedRedirect = new URLSearchParams(location.search).get("redirect");
-  const signupHref =
-    !requestedRedirect ? "/signup" : `/signup?redirect=${encodeURIComponent(requestedRedirect)}`;
+  const signupHref = !requestedRedirect
+    ? "/signup"
+    : `/signup?redirect=${encodeURIComponent(requestedRedirect)}`;
 
   const {
     register,
@@ -122,37 +110,35 @@ export const LoginPage = () => {
           <div className="mx-auto w-full max-w-md">
             <Link
               to="/"
-              className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#E8D9C4] bg-white/80 px-4 py-2 text-sm font-semibold text-[#6B5C4A] transition hover:border-[#F5C062] hover:bg-[#FFF8EE]"
+              className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#E8D9C4] bg-white/80 px-4 py-1.5 text-sm font-semibold text-[#6B5C4A] transition hover:border-[#F5C062] hover:bg-[#FFF8EE]"
             >
-              <IoArrowBack size={14} />
+              <ArrowLeft size={14} />
               Back to home
             </Link>
 
-            <header className="mb-7">
-              <h1 className="text-2xl font-extrabold tracking-tight text-[#1C1917] sm:text-3xl">
-                Welcome back 👋
+            <header className="mb-5">
+              <h1 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-[#1C1917] sm:text-3xl">
+                Welcome back
+                <MdWavingHand className="text-[#F5A623]" size={28} />
               </h1>
-              <p className="mt-1.5 text-sm leading-relaxed text-[#7A6A58]">
+              <p className="mt-1 text-sm leading-relaxed text-[#7A6A58]">
                 Sign in to continue managing appointments, records, and your pet profile.
               </p>
             </header>
 
             {submitError && (
               <div
-                className="mb-5 flex items-start gap-2.5 rounded-[16px] border border-[#F0C4B8] bg-[#FFF3F0] px-4 py-3.5"
+                className="mb-4 flex items-start gap-2.5 rounded-[16px] border border-[#F0C4B8] bg-[#FFF3F0] px-4 py-3"
                 role="alert"
               >
-                <MdErrorOutline className="mt-0.5 shrink-0 text-[#C45F3E]" size={18} />
+                <AlertCircle className="mt-0.5 shrink-0 text-[#C45F3E]" size={18} />
                 <p className="text-sm font-medium text-[#9A3F2C]">{submitError}</p>
               </div>
             )}
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
               <div>
-                <label
-                  htmlFor="login-email"
-                  className="mb-1.5 block text-sm font-semibold text-[#5B544C]"
-                >
+                <label htmlFor="login-email" className="mb-1.5 block text-sm font-semibold text-[#5B544C]">
                   Email address
                 </label>
                 <input
@@ -169,16 +155,10 @@ export const LoginPage = () => {
 
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
-                  <label
-                    htmlFor="login-password"
-                    className="text-sm font-semibold text-[#5B544C]"
-                  >
+                  <label htmlFor="login-password" className="text-sm font-semibold text-[#5B544C]">
                     Password
                   </label>
-                  <Link
-                    to="/forgot-password"
-                    className="text-xs font-semibold text-[#C77E1D] hover:underline"
-                  >
+                  <Link to="/forgot-password" className="text-xs font-semibold text-[#C77E1D] hover:underline">
                     Forgot password?
                   </Link>
                 </div>
@@ -199,11 +179,7 @@ export const LoginPage = () => {
                     className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-[#9A8464] transition hover:bg-[#F8F1E6] hover:text-[#C77E1D]"
                     onClick={() => setShowPassword((v) => !v)}
                   >
-                    {showPassword ? (
-                      <AiOutlineEyeInvisible size={20} />
-                    ) : (
-                      <AiOutlineEye size={20} />
-                    )}
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
                 <FieldError msg={errors.password?.message} />
@@ -212,7 +188,7 @@ export const LoginPage = () => {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="pet-button-primary h-12 w-full border-0 text-[15px] font-bold disabled:cursor-not-allowed disabled:opacity-55"
+                className="pet-button-primary h-11 w-full border-0 text-[15px] font-bold disabled:cursor-not-allowed disabled:opacity-55"
               >
                 {isSubmitting ? "Signing you in…" : "Log in"}
               </Button>
@@ -226,14 +202,14 @@ export const LoginPage = () => {
               <button
                 type="button"
                 onClick={handleGoogleLogin}
-                className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full border border-[#E8D9C4] bg-white text-sm font-semibold text-[#3C3C3C] shadow-[0_2px_8px_rgba(45,45,45,0.06)] transition hover:border-[#F5C062] hover:bg-[#FFFBF5] hover:shadow-[0_4px_14px_rgba(45,45,45,0.10)]"
+                className="flex h-11 w-full items-center justify-center gap-2.5 rounded-full border border-[#E8D9C4] bg-white text-sm font-semibold text-[#3C3C3C] shadow-[0_2px_8px_rgba(45,45,45,0.06)] transition hover:border-[#F5C062] hover:bg-[#FFFBF5]"
               >
                 <FcGoogle size={20} />
                 Continue with Google
               </button>
             </form>
 
-            <p className="mt-7 text-center text-sm text-[#6B6B6B]">
+            <p className="mt-5 text-center text-sm text-[#6B6B6B]">
               Not a member yet?{" "}
               <Link to={signupHref} className="font-bold text-[#C77E1D] hover:underline">
                 Create your account

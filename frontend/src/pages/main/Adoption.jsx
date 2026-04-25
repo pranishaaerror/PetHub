@@ -1,15 +1,13 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Footer from '../Footer'
 import Header from '../Header'
 import { listAdoption } from '../../apis/adoption/apis';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '../../components/Button';
-import { Heart, MapPin, ArrowRight, Sparkles, Shield, Clock, Star } from 'lucide-react';
+import { Heart, ArrowRight, Sparkles, Shield, Clock, Star } from 'lucide-react';
 
 const Adoption = () => {
   const navigate = useNavigate();
   const [adoptionPets, setAdoptionPets] = useState([]);
-  const [hoveredPet, setHoveredPet] = useState(null);
 
   useEffect(() => {
     listAdoption()
@@ -42,10 +40,8 @@ const Adoption = () => {
   return (
     <div className="min-h-screen bg-[#F4EAD9] px-2 py-2 text-[#2D2D2D] sm:px-3 sm:py-3 md:px-4 md:py-4">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
-
-        .adopt-root { font-family: 'DM Sans', sans-serif; }
-        .adopt-serif { font-family: 'Playfair Display', Georgia, serif; }
+        .adopt-root { font-family: inherit; }
+        .adopt-serif { font-family: inherit; }
 
         .pet-card {
           background: #fff;
@@ -195,12 +191,16 @@ const Adoption = () => {
                 <p className="mt-1 text-xs text-white/50 uppercase tracking-widest">Pets Available</p>
               </div>
               <div className="hero-stat text-center">
-                <p className="adopt-serif text-3xl font-700 text-amber-400">98%</p>
-                <p className="mt-1 text-xs text-white/50 uppercase tracking-widest">Happy Families</p>
+                <p className="adopt-serif text-3xl font-700 text-amber-400">
+                  {adoptionPets.filter(p => p.status === 'Available').length}
+                </p>
+                <p className="mt-1 text-xs text-white/50 uppercase tracking-widest">Ready to Adopt</p>
               </div>
               <div className="hero-stat text-center">
-                <p className="adopt-serif text-3xl font-700 text-amber-400">24h</p>
-                <p className="mt-1 text-xs text-white/50 uppercase tracking-widest">Response Time</p>
+                <p className="adopt-serif text-3xl font-700 text-amber-400">
+                  {adoptionPets.filter(p => p.status === 'Adopted').length}
+                </p>
+                <p className="mt-1 text-xs text-white/50 uppercase tracking-widest">Found Homes</p>
               </div>
             </div>
           </div>
@@ -249,8 +249,6 @@ const Adoption = () => {
                 <div
                   key={pet._id}
                   className="pet-card"
-                  onMouseEnter={() => setHoveredPet(pet._id)}
-                  onMouseLeave={() => setHoveredPet(null)}
                 >
                   {/* Image */}
                   <div className="pet-img-wrap">

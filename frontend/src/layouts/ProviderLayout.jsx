@@ -29,7 +29,9 @@ export const ProviderLayout = ({ portal }) => {
         label: portal === "vet" ? "Appointments" : "Bookings",
         to: `${base}/bookings`,
       },
-      { icon: Banknote, label: "Payments", to: `${base}/payments` },
+      ...(portal !== "vet"
+        ? [{ icon: Banknote, label: "Payments", to: `${base}/payments` }]
+        : []),
       { icon: UserCircle, label: "Profile", to: `${base}/profile` },
     ],
     [base, portal]

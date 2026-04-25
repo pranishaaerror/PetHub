@@ -167,6 +167,10 @@ const appointmentTableSchema = new mongoose.Schema({
         type: String,
         enum: ["pending","confirmed","cancelled","completed"],
         default:"pending"
+    },
+    reminderSent: {
+        type: Boolean,
+        default: false
     }
 }
 ,{ timestamps: true })

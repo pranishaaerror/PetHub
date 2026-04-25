@@ -4,6 +4,7 @@ import AdoptionRequest from "../models/AdoptionRequest.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 import { getCurrentDatabaseUser } from "../services/currentUserService.js";
 import { createNotification } from "../services/notificationService.js";
+import { sendAdoptionStatusEmail } from "../services/emailService.js";
 
 const router = express.Router();
 
@@ -100,7 +101,9 @@ router.patch("/:requestId/status", verifyToken, async (req, res) => {
       return res.status(400).json({ message: "Invalid adoption request status." });
     }
 
-    const request = await AdoptionRequest.findById(req.params.requestId).populate("petId");
+    const request = await AdoptionRequest.findById(req.params.requestId)
+      .populate("petId")
+      .populate("userId");
 
     if (!request) {
       return res.status(404).json({ message: "Adoption request not found." });
@@ -128,17 +131,53 @@ router.patch("/:requestId/status", verifyToken, async (req, res) => {
     }
 
     await createNotification({
-      userId: request.userId,
+      userId: request.userId._id,
       title: "Adoption request updated",
       message: `Your request for ${request.petId?.petName ?? "this pet"} is now ${status}.`,
       type: "adoption",
     });
+
+    // Send email notification to the applicant
+    const recipientEmail = request.userId?.email || request.email;
+    const recipientName  = request.userId?.fullName || request.userId?.displayName || request.fullName || "Pet Parent";
+    if (recipientEmail) {
+      try {
+        await sendAdoptionStatusEmail({
+          to: recipientEmail,
+          recipientName,
+          petName: request.petId?.petName ?? "your pet",
+          status,
+          requestId: String(request._id),
+        });
+      } catch (emailError) {
+        console.error("Adoption status email failed:", emailError.message);
+      }
+    }
 
     const populatedRequest = await AdoptionRequest.findById(request._id).populate("petId");
     res.json({
       message: "Adoption request status updated successfully.",
       request: populatedRequest,
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+});
+
+router.delete("/:requestId", verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can delete adoption requests." });
+    }
+
+    const request = await AdoptionRequest.findById(req.params.requestId).populate("petId");
+    if (!request) {
+      return res.status(404).json({ message: "Adoption request not found." });
+    }
+
+    await AdoptionRequest.findByIdAndDelete(req.params.requestId);
+
+    res.json({ message: "Adoption request deleted successfully." });
   } catch (error) {
     res.status(500).json({ message: error.message || "Server error" });
   }

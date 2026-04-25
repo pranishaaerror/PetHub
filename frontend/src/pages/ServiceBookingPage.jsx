@@ -192,10 +192,8 @@ export const ServiceBookingPage = () => {
   return (
     <div className="min-h-screen bg-[#FAFAF8] px-4 py-6 sm:px-6 lg:px-8">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap');
-
-        .sb-root  { font-family: 'DM Sans', sans-serif; color: #1A1A1A; }
-        .sb-serif { font-family: 'Fraunces', Georgia, serif; }
+        .sb-root  { font-family: inherit; color: #1A1A1A; }
+        .sb-serif { font-family: inherit; }
 
         .sb-card {
           background: #fff;
@@ -216,7 +214,7 @@ export const ServiceBookingPage = () => {
           width: 100%; background: #F7F3ED;
           border: 1.5px solid transparent; border-radius: 14px;
           padding: 12px 16px; font-size: 14px;
-          font-family: 'DM Sans', sans-serif; color: #1A1A1A;
+          font-family: inherit; color: #1A1A1A;
           outline: none; transition: border-color 0.2s, box-shadow 0.2s;
         }
         .sb-input:focus { border-color: #F5A623; box-shadow: 0 0 0 3px rgba(245,166,35,0.12); }

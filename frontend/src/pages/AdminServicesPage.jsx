@@ -1,200 +1,370 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Clock3, PlusCircle, Sparkles, WalletCards } from "lucide-react";
+import { Listbox } from "@headlessui/react";
+import { Check, ChevronDown, PawPrint, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "react-toastify";
-import { useCreateServices, useServices } from "../apis/services/hooks";
-import {Button} from "../components/Button";
+import { PetHubLoader } from "../components/PetHubLoader";
+import { useCreateServices, useDeleteService, useServices, useUpdateService } from "../apis/services/hooks";
+
 const categoryOptions = [
-  { value: "vet", label: "Vet Consultation" },
-  { value: "grooming", label: "Grooming" },
-  { value: "vaccination", label: "Vaccination" },
-  { value: "dental", label: "Dental" },
+  { value: "vet",         label: "Vet Consultation" },
+  { value: "grooming",    label: "Grooming"          },
+  { value: "vaccination", label: "Vaccination"       },
+  { value: "dental",      label: "Dental"            },
 ];
 
+const categoryConfig = {
+  vet:         { badge: "bg-blue-50 text-blue-700 ring-1 ring-blue-200"     },
+  grooming:    { badge: "bg-purple-50 text-purple-700 ring-1 ring-purple-200" },
+  vaccination: { badge: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" },
+  dental:      { badge: "bg-amber-50 text-amber-700 ring-1 ring-amber-200"  },
+};
+
+const EMPTY_FORM = { serviceName: "", description: "", price: "", durationMinutes: "45", category: "vet" };
+
+/* ── Category dropdown ── */
+function CategoryDropdown({ value, onChange, disabled }) {
+  const cfg = categoryConfig[value] ?? categoryConfig.vet;
+  const label = categoryOptions.find((o) => o.value === value)?.label ?? value;
+  return (
+    <div className="relative">
+      <Listbox value={value} onChange={onChange} disabled={disabled}>
+        <Listbox.Button className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold cursor-pointer hover:opacity-75 disabled:opacity-50 ${cfg.badge}`}>
+          {label}
+          <ChevronDown className="w-2.5 h-2.5 opacity-50 flex-shrink-0" />
+        </Listbox.Button>
+        <Listbox.Options className="absolute z-50 mt-1.5 w-40 rounded-xl bg-white shadow-lg border border-gray-100 overflow-hidden focus:outline-none">
+          {categoryOptions.map((opt) => (
+            <Listbox.Option key={opt.value} value={opt.value}
+              className={({ active }) => `cursor-pointer select-none px-3 py-2 flex items-center gap-2 text-xs font-medium text-gray-700 transition-colors ${active ? "bg-gray-50" : "bg-white"}`}
+            >
+              {({ selected }) => (
+                <>
+                  {opt.label}
+                  {selected && <Check className="w-3 h-3 ml-auto text-gray-400 flex-shrink-0" />}
+                </>
+              )}
+            </Listbox.Option>
+          ))}
+        </Listbox.Options>
+      </Listbox>
+    </div>
+  );
+}
+
+/* ── Service form modal ── */
+function ServiceModal({ initial, onClose, onSave, isSaving }) {
+  const [form, setForm] = useState(initial ?? EMPTY_FORM);
+  const isEdit = !!initial;
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.serviceName.trim() || !form.description.trim() || !form.price) {
+      toast.error("Name, description and price are required.");
+      return;
+    }
+    onSave({ ...form, price: Number(form.price), durationMinutes: Number(form.durationMinutes) });
+  };
+
+  const inputCls = "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition bg-white";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F5A623]/10 backdrop-blur-[3px] px-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[92vh] flex flex-col">
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FFF0D6]">
+              <PawPrint className="h-4 w-4 text-[#F5A623]" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-[#2D2D2D]">{isEdit ? "Edit Service" : "Add New Service"}</h3>
+              <p className="text-xs text-gray-400">{isEdit ? "Update service details" : "Create a new booking service"}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Service Name <span className="text-amber-500">*</span></label>
+            <input value={form.serviceName} onChange={(e) => set("serviceName", e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Description <span className="text-amber-500">*</span></label>
+            <textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={3} className={`${inputCls} resize-none`} />
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Price (NPR) <span className="text-amber-500">*</span></label>
+              <input type="number" min={0} value={form.price} onChange={(e) => set("price", e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Duration (min)</label>
+              <input type="number" min={15} step={15} value={form.durationMinutes} onChange={(e) => set("durationMinutes", e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Category</label>
+              <select value={form.category} onChange={(e) => set("category", e.target.value)} className={inputCls}>
+                {categoryOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          </div>
+        </form>
+
+        <div className="flex gap-3 px-6 py-4 border-t border-gray-100 shrink-0">
+          <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-[#E8D9C4] bg-white py-2.5 text-sm font-semibold text-[#5B4A36] hover:bg-[#FFF8EE] transition-colors">
+            Cancel
+          </button>
+          <button type="button" onClick={handleSubmit} disabled={isSaving}
+            className="flex-1 rounded-xl bg-[linear-gradient(135deg,#F5A623,#FFB347)] py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(245,166,35,0.28)] hover:opacity-90 disabled:opacity-50 transition-all">
+            {isSaving ? "Saving…" : isEdit ? "Save changes" : "Create service"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Delete confirm modal ── */
+function DeleteConfirmModal({ service, onConfirm, onCancel, isDeleting }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F5A623]/10 backdrop-blur-[3px] px-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF0D6] mx-auto">
+          <PawPrint className="h-7 w-7 text-[#F5A623]" />
+        </div>
+        <h3 className="mt-4 text-center text-lg font-bold text-[#2D2D2D]">Remove this service?</h3>
+        <p className="mt-2 text-center text-sm text-[#7A6A50]">
+          <span className="font-semibold text-[#2D2D2D]">"{service.serviceName}"</span> will be permanently removed from the booking catalog.
+        </p>
+        <div className="mt-6 flex gap-3">
+          <button onClick={onCancel} disabled={isDeleting}
+            className="flex-1 rounded-xl border border-[#E8D9C4] bg-white py-2.5 text-sm font-semibold text-[#5B4A36] hover:bg-[#FFF8EE] transition-colors disabled:opacity-50">
+            Keep it
+          </button>
+          <button onClick={onConfirm} disabled={isDeleting}
+            className="flex-1 rounded-xl bg-[linear-gradient(135deg,#F5A623,#FFB347)] py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(245,166,35,0.28)] hover:opacity-90 disabled:opacity-50 transition-all">
+            {isDeleting ? "Removing…" : "Yes, remove"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main page ── */
 export const AdminServicesPage = () => {
   const queryClient = useQueryClient();
   const { data: servicesResponse, isLoading } = useServices();
-  const { mutateAsync: createService, isPending } = useCreateServices();
+  const { mutateAsync: createService, isPending: isCreating } = useCreateServices();
+  const { mutateAsync: updateService, isPending: isUpdating } = useUpdateService();
+  const { mutateAsync: deleteService, isPending: isDeleting } = useDeleteService();
+
+  const [showModal, setShowModal]       = useState(false);
+  const [editTarget, setEditTarget]     = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
   const services = servicesResponse?.data ?? [];
-  const [form, setForm] = useState({
-    serviceName: "",
-    description: "",
-    price: "",
-    durationMinutes: "45",
-    category: "vet",
-  });
 
-  const handleChange = (field) => (event) => {
-    setForm((current) => ({
-      ...current,
-      [field]: event.target.value,
-    }));
-  };
+  const categoryCounts = useMemo(() =>
+    categoryOptions.reduce((acc, o) => {
+      acc[o.value] = services.filter((s) => s.category === o.value).length;
+      return acc;
+    }, {}), [services]);
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["get-services"] });
 
+  const handleCreate = async (data) => {
     try {
-      await createService({
-        serviceName: form.serviceName.trim(),
-        description: form.description.trim(),
-        price: Number(form.price),
-        durationMinutes: Number(form.durationMinutes),
-        category: form.category,
-      });
-      await queryClient.invalidateQueries({ queryKey: ["get-services"] });
-      setForm({
-        serviceName: "",
-        description: "",
-        price: "",
-        durationMinutes: "45",
-        category: "vet",
-      });
-      toast.success("Service created successfully.");
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      await createService(data);
+      await invalidate();
+      toast.success("Service created.");
+      setShowModal(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message);
     }
   };
 
+  const handleEdit = async (data) => {
+    try {
+      await updateService({ serviceId: editTarget._id, ...data });
+      await invalidate();
+      toast.success("Service updated.");
+      setEditTarget(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteService(deleteTarget._id);
+      await invalidate();
+      toast.success("Service removed.");
+      setDeleteTarget(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message);
+    }
+  };
+
+  if (isLoading) {
+    return <PetHubLoader title="Loading Services" message="Fetching the live booking catalog." />;
+  }
+
   return (
-    <div className="pet-page">
-      <section className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-        <div className="pet-card p-6 md:p-8">
-          <span className="pet-chip">Service Creation</span>
-          <h1 className="mt-4 text-4xl font-bold leading-tight">Add premium services that appear instantly in booking.</h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-[#6B6B6B]">
-            This replaces the older disconnected admin form with the same PetHub visual system and a
-            real backend-protected service flow.
+    <div className="p-6 space-y-6">
+
+      {showModal && <ServiceModal onClose={() => setShowModal(false)} onSave={handleCreate} isSaving={isCreating} />}
+      {editTarget && <ServiceModal initial={{ ...editTarget, price: String(editTarget.price), durationMinutes: String(editTarget.durationMinutes) }} onClose={() => setEditTarget(null)} onSave={handleEdit} isSaving={isUpdating} />}
+      {deleteTarget && <DeleteConfirmModal service={deleteTarget} onConfirm={handleDelete} onCancel={() => setDeleteTarget(null)} isDeleting={isDeleting} />}
+
+      {/* ── HEADER ── */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Services</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Manage the booking catalog. Changes appear instantly for users.
           </p>
-
-          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-[#5B544C]">Service name</span>
-              <input
-                value={form.serviceName}
-                onChange={handleChange("serviceName")}
-                className="w-full rounded-[22px] bg-[#FFF8EE] px-4 py-4 text-sm outline-none ring-2 ring-transparent transition focus:ring-[#F5C062]"
-                placeholder="Premium dental refresh"
-                required
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-[#5B544C]">Description</span>
-              <textarea
-                value={form.description}
-                onChange={handleChange("description")}
-                rows={4}
-                className="w-full rounded-[22px] bg-[#FFF8EE] px-4 py-4 text-sm outline-none ring-2 ring-transparent transition focus:ring-[#F5C062]"
-                placeholder="A gentle premium service description for pet parents."
-                required
-              />
-            </label>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-[#5B544C]">Price (NPR)</span>
-                <input
-                  type="number"
-                  min="0"
-                  value={form.price}
-                  onChange={handleChange("price")}
-                  className="w-full rounded-[22px] bg-[#FFF8EE] px-4 py-4 text-sm outline-none ring-2 ring-transparent transition focus:ring-[#F5C062]"
-                  placeholder="1500"
-                  required
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-[#5B544C]">Duration (min)</span>
-                <input
-                  type="number"
-                  min="15"
-                  step="15"
-                  value={form.durationMinutes}
-                  onChange={handleChange("durationMinutes")}
-                  className="w-full rounded-[22px] bg-[#FFF8EE] px-4 py-4 text-sm outline-none ring-2 ring-transparent transition focus:ring-[#F5C062]"
-                  required
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-[#5B544C]">Category</span>
-                <select
-                  value={form.category}
-                  onChange={handleChange("category")}
-                  className="w-full rounded-[22px] bg-[#FFF8EE] px-4 py-4 text-sm outline-none ring-2 ring-transparent transition focus:ring-[#F5C062]"
-                >
-                  {categoryOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <Button type="submit" disabled={isPending} className="pet-button-primary gap-2">
-              <PlusCircle className="h-4 w-4" />
-              {isPending ? "Creating service..." : "Create service"}
-            </Button>
-          </form>
         </div>
-
-        <div className="pet-card p-6 md:p-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="pet-chip">Live Services</span>
-              <h2 className="mt-4 text-3xl font-bold">Current booking catalog</h2>
-            </div>
-            <Sparkles className="h-7 w-7 text-[#F5A623]" />
+        <div className="flex items-center gap-3">
+          <div className="rounded-2xl bg-amber-50 px-5 py-4 border border-amber-100">
+            <p className="text-xs font-semibold uppercase tracking-widest text-amber-600">Total services</p>
+            <p className="mt-1 text-3xl font-bold text-gray-800">{services.length}</p>
           </div>
-
-          <div className="mt-8 grid gap-4">
-            {isLoading ? (
-              <div className="rounded-[24px] bg-[#FFF8EE] p-5 text-sm text-[#6B6B6B] shadow-[0_16px_35px_rgba(45,45,45,0.04)]">
-                Loading services...
-              </div>
-            ) : services.length ? (
-              services.map((service) => (
-                <div
-                  key={service._id}
-                  className="rounded-[26px] bg-[#FFF8EE] p-5 shadow-[0_16px_35px_rgba(45,45,45,0.04)]"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xl font-bold">{service.serviceName}</p>
-                      <p className="mt-2 text-sm leading-7 text-[#6B6B6B]">{service.description}</p>
-                    </div>
-                    <span className="pet-chip capitalize">{service.category}</span>
-                  </div>
-
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-[22px] bg-white px-4 py-4 shadow-[0_14px_28px_rgba(45,45,45,0.04)]">
-                      <p className="flex items-center gap-2 text-sm text-[#8B7B66]">
-                        <WalletCards className="h-4 w-4 text-[#F5A623]" />
-                        Price
-                      </p>
-                      <p className="mt-1 text-lg font-semibold">NPR {service.price}</p>
-                    </div>
-                    <div className="rounded-[22px] bg-white px-4 py-4 shadow-[0_14px_28px_rgba(45,45,45,0.04)]">
-                      <p className="flex items-center gap-2 text-sm text-[#8B7B66]">
-                        <Clock3 className="h-4 w-4 text-[#F5A623]" />
-                        Duration
-                      </p>
-                      <p className="mt-1 text-lg font-semibold">{service.durationMinutes} minutes</p>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="rounded-[24px] bg-[#FFF8EE] p-5 text-sm text-[#6B6B6B] shadow-[0_16px_35px_rgba(45,45,45,0.04)]">
-                No services are in the live catalog yet.
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#F5A623,#FFB347)] px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(245,166,35,0.28)] hover:opacity-90 transition-all"
+          >
+            <Plus className="h-4 w-4" />
+            Add Service
+          </button>
         </div>
-      </section>
+      </div>
+
+      {/* ── STAT CHIPS ── */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {categoryOptions.map((o) => {
+          const cfg = categoryConfig[o.value] ?? categoryConfig.vet;
+          return (
+            <div key={o.value} className={`rounded-2xl px-4 py-3 ring-1 ${cfg.badge}`}>
+              <p className="text-xs font-semibold">{o.label}</p>
+              <p className="mt-1 text-2xl font-bold">{categoryCounts[o.value] ?? 0}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── TABLE ── */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Service</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Price</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Duration</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {services.map((service) => {
+                const cfg = categoryConfig[service.category] ?? categoryConfig.vet;
+                const catLabel = categoryOptions.find((o) => o.value === service.category)?.label ?? service.category;
+                return (
+                  <tr key={service._id} className="hover:bg-gray-50 transition-colors">
+
+                    {/* Service name + description */}
+                    <td className="px-6 py-4 max-w-[260px]">
+                      <p className="text-sm font-semibold text-gray-900">{service.serviceName}</p>
+                      {service.description && (
+                        <p className="mt-0.5 text-xs text-gray-400 line-clamp-2 leading-relaxed">{service.description}</p>
+                      )}
+                    </td>
+
+                    {/* Category */}
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${cfg.badge}`}>
+                        {catLabel}
+                      </span>
+                    </td>
+
+                    {/* Price */}
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-semibold text-gray-900">NPR {service.price}</span>
+                    </td>
+
+                    {/* Duration */}
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-700">{service.durationMinutes} min</span>
+                    </td>
+
+                    {/* Active toggle */}
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={async () => {
+                          try {
+                            await updateService({ serviceId: service._id, isActive: !service.isActive });
+                            await invalidate();
+                            toast.success(`Service ${!service.isActive ? "activated" : "deactivated"}.`);
+                          } catch (err) {
+                            toast.error(err.response?.data?.message || err.message);
+                          }
+                        }}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors ${
+                          service.isActive
+                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100"
+                            : "bg-gray-100 text-gray-500 ring-1 ring-gray-200 hover:bg-gray-200"
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${service.isActive ? "bg-emerald-500" : "bg-gray-400"}`} />
+                        {service.isActive ? "Active" : "Inactive"}
+                      </button>
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setEditTarget(service)}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg text-blue-500 hover:bg-blue-50 transition-colors"
+                          title="Edit service"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(service)}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg text-[#B78331] hover:bg-[#FFF8EE] transition-colors"
+                          title="Delete service"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {services.length === 0 && (
+            <div className="py-16 text-center">
+              <p className="text-sm text-gray-400">No services in the catalog yet.</p>
+              <button
+                onClick={() => setShowModal(true)}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[linear-gradient(135deg,#F5A623,#FFB347)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-all"
+              >
+                <Plus className="h-4 w-4" />
+                Add first service
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

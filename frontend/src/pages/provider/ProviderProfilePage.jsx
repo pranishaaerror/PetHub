@@ -69,12 +69,11 @@ export const ProviderProfilePage = () => {
   return (
     <div className="pv-root space-y-6 p-1">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
-        .pv-root { font-family: 'DM Sans', sans-serif; color: #1A1A2E; }
-        .pv-serif { font-family: 'Syne', sans-serif; }
+        .pv-root { font-family: inherit; color: #1A1A2E; }
+        .pv-serif { font-family: inherit; }
         .pv-card { background: #fff; border-radius: 22px; border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 2px 16px rgba(0,0,0,0.05); }
         .pv-chip { display: inline-flex; align-items: center; gap: 6px; background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.25); color: #D97706; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; padding: 5px 14px; border-radius: 100px; }
-        .pv-input { width: 100%; background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 14px; padding: 12px 16px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: #1A1A2E; outline: none; transition: all 0.2s; resize: vertical; }
+        .pv-input { width: 100%; background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 14px; padding: 12px 16px; font-size: 14px; font-family: inherit; color: #1A1A2E; outline: none; transition: all 0.2s; resize: vertical; }
         .pv-input:focus { border-color: #F5A623; box-shadow: 0 0 0 3px rgba(245,166,35,0.1); }
         .pv-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #94A3B8; margin-bottom: 8px; }
         .pv-btn-primary { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #F5A623, #FF8C00); color: #fff; font-weight: 700; font-size: 14px; padding: 13px 28px; border-radius: 14px; border: none; cursor: pointer; box-shadow: 0 8px 20px rgba(245,166,35,0.28); transition: all 0.2s; }

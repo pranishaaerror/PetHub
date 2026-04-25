@@ -262,4 +262,23 @@ router.patch("/:appointmentId", verifyToken, async (req, res) => {
   }
 });
 
+router.delete("/:appointmentId", verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can delete appointments." });
+    }
+
+    const appointment = await Appointment.findById(req.params.appointmentId);
+    if (!appointment) {
+      return res.status(404).json({ message: "Appointment not found." });
+    }
+
+    await Appointment.findByIdAndDelete(req.params.appointmentId);
+
+    res.json({ message: "Appointment deleted successfully." });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 export default router;

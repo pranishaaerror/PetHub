@@ -4,12 +4,14 @@ import {
   BellRing,
   ChevronRight,
   ClipboardCheck,
+  Heart,
   LayoutDashboard,
   LogOut,
   Menu,
   PawPrint,
   Settings2,
   Users,
+  UsersRound,
   X,
 } from "lucide-react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
@@ -22,11 +24,13 @@ export const AdminLayout = () => {
 
   const navItems = useMemo(
     () => [
-      { label: "Overview", url: "/admin", icon: LayoutDashboard, exact: true },
-      { label: "Users", url: "/admin/users", icon: Users },
-      { label: "Appointments", url: "/admin/appointments", icon: ClipboardCheck },
-      { label: "Services", url: "/admin/services", icon: Settings2 },
-      { label: "Adoption Queue", url: "/admin/adoption-requests", icon: BellRing },
+      { label: "Overview",        url: "/admin",                   icon: LayoutDashboard, exact: true },
+      { label: "Users",           url: "/admin/users",             icon: Users },
+      { label: "Appointments",    url: "/admin/appointments",      icon: ClipboardCheck },
+      { label: "Services",        url: "/admin/services",          icon: Settings2 },
+      { label: "Adoption Pets",   url: "/admin/adoption-pets",     icon: Heart },
+      { label: "Adoption Queue",  url: "/admin/adoption-requests", icon: BellRing },
+      { label: "Community",       url: "/admin/community",         icon: UsersRound },
     ],
     []
   );
@@ -46,11 +50,15 @@ export const AdminLayout = () => {
     <div className="relative min-h-screen overflow-hidden bg-[#F4EAD9] text-[#2D2D2D]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,179,71,0.26),_transparent_34%),radial-gradient(circle_at_bottom_right,_rgba(245,166,35,0.16),_transparent_30%)]" />
       <div className="relative flex min-h-screen gap-3 px-2 py-2 md:gap-4 md:px-3 md:py-3 lg:px-4 lg:py-4">
-        <aside
-          className={`${
-            sidebarOpen ? "translate-x-0" : "-translate-x-[120%]"
-          } fixed inset-y-2 left-2 z-40 w-[300px] rounded-[30px] bg-white/92 p-5 shadow-[0_25px_80px_rgba(45,45,45,0.08)] backdrop-blur-xl transition-transform duration-300 md:static md:translate-x-0`}
-        >
+         <aside
+            className={`${
+              sidebarOpen ? "translate-x-0" : "-translate-x-[120%]"
+            }
+            fixed inset-y-2 left-2 z-40 w-[290px] 
+            rounded-[30px] bg-white/90 py-5 pl-5 
+            shadow-[0_25px_80px_rgba(45,45,45,0.08)] 
+            backdrop-blur-xl transition-transform duration-300 md:translate-x-0`}
+          >
           <div className="flex h-full flex-col gap-6">
             <div className="flex items-center justify-between">
               <Link to="/admin" className="flex items-center gap-3">
@@ -73,23 +81,7 @@ export const AdminLayout = () => {
               </Button>
             </div>
 
-            <div className="rounded-[26px] bg-[linear-gradient(145deg,rgba(245,166,35,0.18),rgba(255,255,255,0.9))] p-4 shadow-[0_18px_35px_rgba(245,166,35,0.12)]">
-              <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#A77222]">
-                Admin Access
-              </p>
-              <h2 className="mt-2 text-lg font-bold">{adminName}</h2>
-              <p className="mt-2 text-sm leading-6 text-[#6B6B6B]">
-                Manage users, appointments, adoption requests, and service offerings from the same
-                warm PetHub design system.
-              </p>
-              <div className="mt-4 flex gap-2">
-                <Link to="/dashboard" className="pet-button-secondary px-4 py-2 text-xs">
-                  User View
-                </Link>
-              </div>
-            </div>
-
-            <nav className="flex flex-1 flex-col gap-2">
+            <nav className="flex flex-1 flex-col gap-2 overflow-y-auto scrollbar-thin scrollbar-thumb-[#F5A623]/60 pr-5">
               {navItems.map((item) => (
                 <NavLink
                   key={item.url}
@@ -115,19 +107,9 @@ export const AdminLayout = () => {
               ))}
             </nav>
 
-            <div className="rounded-[26px] bg-[#FFF8EE] p-4 shadow-[0_18px_35px_rgba(45,45,45,0.04)]">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#A97C3A]">
-                Admin Note
-              </p>
-              <p className="mt-2 text-sm leading-6 text-[#6B6B6B]">
-                Approving requests and updating booking states now creates real notification trails
-                for users.
-              </p>
-            </div>
-
             <Link
               to="/logout"
-              className="flex items-center justify-between rounded-[22px] bg-white px-4 py-3.5 text-sm font-semibold text-[#D36A45] shadow-[0_15px_30px_rgba(45,45,45,0.04)] transition-transform hover:-translate-y-0.5"
+              className="flex items-center justify-between rounded-[22px] bg-white px-4 py-3.5 mr-5 text-sm font-semibold text-[#D36A45] shadow-[0_15px_30px_rgba(45,45,45,0.04)] transition-transform hover:-translate-y-0.5"
             >
               <span className="flex items-center gap-3">
                 <span className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-[#FFF3EA]">
@@ -148,7 +130,7 @@ export const AdminLayout = () => {
           />
         ) : null}
 
-        <main className="relative flex min-h-screen min-w-0 flex-1 flex-col">
+        <main className="relative flex h-full min-w-0 flex-1 flex-col overflow-y-auto md:ml-[310px]">      
           <header className="glass-surface sticky top-2 z-20 flex items-center justify-between rounded-[28px] px-4 py-4 shadow-[0_20px_60px_rgba(45,45,45,0.08)] md:px-6">
             <div className="flex items-center gap-3">
               <Button

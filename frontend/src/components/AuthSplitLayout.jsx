@@ -20,9 +20,9 @@ export const AuthSplitLayout = ({
       : "relative mx-auto mb-3 flex w-full min-h-[min(640px,calc(100dvh-220px))] max-h-[min(900px,calc(100dvh-200px))] flex-1 overflow-hidden rounded-[28px] bg-white/60 shadow-[0_28px_80px_rgba(45,45,45,0.09)] backdrop-blur-xl sm:mb-4 md:mx-4 md:mb-5"
     : "relative mx-auto flex h-full max-w-[1500px] overflow-hidden rounded-[36px] bg-white/60 shadow-[0_28px_80px_rgba(45,45,45,0.09)] backdrop-blur-xl";
 
-  // Form column is always scrollable so content is never clipped regardless of viewport size
+  // Form column — centered, no scroll on normal viewports
   const formColClass = embedded
-    ? "relative flex min-h-0 w-full flex-col justify-start overflow-y-auto overscroll-contain px-4 py-6 sm:px-5 md:px-8 lg:w-[55%] lg:px-12 xl:px-16"
+    ? "relative flex min-h-0 w-full flex-col justify-center overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 md:px-8 lg:w-[55%] lg:px-12 xl:px-16"
     : "relative m-auto flex w-full flex-col justify-center overflow-y-auto px-4 py-6 sm:px-5 md:px-8 lg:w-[45%] lg:px-12 xl:px-16";
 
   return (

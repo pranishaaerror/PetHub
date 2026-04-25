@@ -19,3 +19,9 @@ export const updateAdoptionRequestStatus = ({ requestId, status }) =>
     method: "PATCH",
     data: { status },
   });
+
+export const deleteAdoptionRequest = (requestId) =>
+  axiosInstance.request({
+    url: `/adoption-requests/${requestId}`,
+    method: "DELETE",
+  });

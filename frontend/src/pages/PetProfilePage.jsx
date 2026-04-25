@@ -31,7 +31,6 @@ const formFields = [
   { name: "weight",            label: "Weight",              span: false },
   { name: "color",             label: "Color / markings",   span: false },
   { name: "vaccinationStatus", label: "Vaccination status",  span: false },
-  { name: "preferredClinic",   label: "Preferred clinic",    span: true  },
 ];
 
 export const PetProfilePage = () => {
@@ -113,10 +112,8 @@ export const PetProfilePage = () => {
   return (
     <div className="min-h-screen bg-[#FAFAF8] px-4 py-6 sm:px-6 lg:px-8">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap');
-
-        .pp-root  { font-family: 'DM Sans', sans-serif; color: #1A1A1A; }
-        .pp-serif { font-family: 'Fraunces', Georgia, serif; }
+        .pp-root  { font-family: inherit; color: #1A1A1A; }
+        .pp-serif { font-family: inherit; }
 
         .pp-card {
           background: #ffffff;
@@ -140,7 +137,7 @@ export const PetProfilePage = () => {
           border-radius: 14px;
           padding: 12px 16px;
           font-size: 14px;
-          font-family: 'DM Sans', sans-serif;
+          font-family: inherit;
           color: #1A1A1A;
           outline: none;
           transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
@@ -354,26 +351,6 @@ export const PetProfilePage = () => {
               </div>
               <p className="mt-3 text-sm leading-relaxed text-[#6B6B6B]">
                 Your current care plan covers bookings, reminders, and health tracking.
-              </p>
-            </div>
-
-            {/* Preferred clinic */}
-            <div className="pp-card p-5">
-              <div className="flex items-center gap-3">
-                <div className="stat-icon-wrap bg-[#E8F5E9]">
-                  <ShieldCheck className="h-5 w-5 text-[#43A047]" />
-                </div>
-                <div>
-                  <p className="text-[11px] font-700 uppercase tracking-widest text-[#9B8C7A]">Clinic</p>
-                  <p className="pp-serif mt-0.5 text-xl font-700 text-[#1A1A1A]">
-                    {primaryPet.preferredClinic || "Open choice"}
-                  </p>
-                </div>
-              </div>
-              <p className="mt-3 text-sm leading-relaxed text-[#6B6B6B]">
-                {primaryPet.preferredClinic
-                  ? "Your preferred clinic is set for all future bookings."
-                  : "Set a preferred clinic to speed up booking checkout."}
               </p>
             </div>
 

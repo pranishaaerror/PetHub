@@ -36,4 +36,30 @@ router.patch("/:id/read", verifyToken, async (req, res) => {
   }
 });
 
+router.patch("/read-all", verifyToken, async (req, res) => {
+  try {
+    const user = await getCurrentDatabaseUser(req);
+    await Notification.updateMany({ userId: user._id, isRead: false }, { isRead: true });
+    res.json({ message: "All notifications marked as read." });
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+});
+
+router.delete("/:id", verifyToken, async (req, res) => {
+  try {
+    const user = await getCurrentDatabaseUser(req);
+    const notification = await Notification.findOneAndDelete({
+      _id: req.params.id,
+      userId: user._id,
+    });
+    if (!notification) {
+      return res.status(404).json({ message: "Notification not found." });
+    }
+    res.json({ message: "Notification deleted." });
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+});
+
 export default router;

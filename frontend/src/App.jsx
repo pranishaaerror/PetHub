@@ -29,6 +29,8 @@ import { AdminUsersPage } from "./pages/AdminUsersPage";
 import { AdminAppointmentsPage } from "./pages/AdminAppointmentsPage";
 import { AdminServicesPage } from "./pages/AdminServicesPage";
 import { AdminAdoptionRequestsPage } from "./pages/AdminAdoptionRequestsPage";
+import { AdminAdoptionPetsPage } from "./pages/AdminAdoptionPetsPage";
+import { AdminCommunityPage } from "./pages/AdminCommunityPage";
 import ServiceBooking from "./pages/main/ServiceBooking";
 import Adoption from "./pages/main/Adoption";
 import { ProviderLayout } from "./layouts/ProviderLayout";
@@ -71,6 +73,8 @@ function App() {
           <Route path="appointments" element={<AdminAppointmentsPage />} />
           <Route path="services" element={<AdminServicesPage />} />
           <Route path="adoption-requests" element={<AdminAdoptionRequestsPage />} />
+          <Route path="adoption-pets" element={<AdminAdoptionPetsPage />} />
+          <Route path="community" element={<AdminCommunityPage />} />
         </Route>
         <Route
           path="/vet"
@@ -100,7 +104,7 @@ function App() {
         </Route>
         <Route
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["user"]}>
               <MainLayout />
             </ProtectedRoute>
           }

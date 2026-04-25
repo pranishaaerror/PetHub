@@ -30,14 +30,7 @@ const sendMail = async ({ to, subject, text, html }) => {
   if (!transporter) {
     throw new Error("Email service is not configured.");
   }
-
-  await transporter.sendMail({
-    from: FROM_ADDRESS,
-    to,
-    subject,
-    text,
-    html,
-  });
+  await transporter.sendMail({ from: FROM_ADDRESS, to, subject, text, html });
 };
 
 const escapeHtml = (value = "") =>
@@ -90,7 +83,7 @@ export const sendAppointmentConfirmationEmail = async ({
             <p style="margin: 0;"><strong>Scheduled for:</strong> ${scheduledFor}</p>
           </div>
           <p style="margin: 18px 0 0; color: #6B6B6B; line-height: 1.8;">
-            Keep this email handy when you arrive. We'll take care of the rest.
+            Keep this email handy when you arrive. We will take care of the rest.
           </p>
         </div>
       </div>
@@ -143,6 +136,55 @@ export const sendPasswordResetOtpEmail = async ({ to, otp, displayName }) => {
           </div>
           <p style="margin: 18px 0 0; color: #6B6B6B; line-height: 1.8;">
             This OTP expires in 10 minutes. If you did not request this reset, you can ignore this email.
+          </p>
+        </div>
+      </div>
+    `,
+  });
+};
+
+export const sendAdoptionStatusEmail = async ({ to, recipientName, petName, status, requestId }) => {
+  const statusMessages = {
+    approved: {
+      subject: "Your adoption request was approved! 🐾",
+      headline: "Great news!",
+      body: `Your adoption request for <strong>${escapeHtml(petName)}</strong> has been <strong>approved</strong>. The PetHub team will be in touch shortly to guide you through the next steps.`,
+    },
+    rejected: {
+      subject: "Update on your adoption request",
+      headline: "Request not approved",
+      body: `Unfortunately, your adoption request for <strong>${escapeHtml(petName)}</strong> was not approved at this time. You're welcome to browse other pets and apply again.`,
+    },
+    cancelled: {
+      subject: "Your adoption request was cancelled",
+      headline: "Request cancelled",
+      body: `Your adoption request for <strong>${escapeHtml(petName)}</strong> has been cancelled. If you have questions, please reach out to the PetHub team.`,
+    },
+    pending: {
+      subject: "Your adoption request is under review",
+      headline: "Request received",
+      body: `Your adoption request for <strong>${escapeHtml(petName)}</strong> is currently under review. We'll notify you as soon as there's an update.`,
+    },
+  };
+
+  const cfg = statusMessages[status] ?? statusMessages.pending;
+
+  await sendMail({
+    to,
+    subject: cfg.subject,
+    text: `Hello ${recipientName}, ${cfg.body.replace(/<[^>]+>/g, "")} Request ID: ${requestId}.`,
+    html: `
+      <div style="font-family: Plus Jakarta Sans, Arial, sans-serif; color: #2D2D2D; background: #FFF8EE; padding: 24px;">
+        <div style="max-width: 520px; margin: 0 auto; background: #FFFFFF; border-radius: 24px; padding: 24px; box-shadow: 0 18px 35px rgba(45,45,45,0.08);">
+          <p style="font-size: 12px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase; color: #B78331;">PetHub Adoption</p>
+          <h1 style="margin: 12px 0 8px; font-size: 28px;">${escapeHtml(cfg.headline)}</h1>
+          <p style="margin: 0 0 18px; color: #6B6B6B; line-height: 1.8;">Hello ${escapeHtml(recipientName)},</p>
+          <div style="background: #FFF4E2; border-radius: 20px; padding: 18px;">
+            <p style="margin: 0 0 10px; line-height: 1.8;">${cfg.body}</p>
+            <p style="margin: 0; color: #9B9B9B; font-size: 12px;">Request ID: ${escapeHtml(requestId)}</p>
+          </div>
+          <p style="margin: 18px 0 0; color: #6B6B6B; line-height: 1.8;">
+            Thank you for choosing PetHub. Every adoption story matters to us.
           </p>
         </div>
       </div>

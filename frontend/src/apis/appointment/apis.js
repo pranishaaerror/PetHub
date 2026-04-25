@@ -32,3 +32,10 @@ export const deleteAppointment = (appointmentId) =>
     url: `/appointments/${appointmentId}`,
     method: "DELETE",
   });
+
+export const assignVetToAppointment = ({ appointmentId, veterinarianId }) =>
+  axiosInstance.request({
+    url: `/appointments/${appointmentId}/assign-vet`,
+    method: "PATCH",
+    data: { veterinarianId },
+  });

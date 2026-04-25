@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Listbox } from '@headlessui/react';
-import { PawPrint, Trash2 } from 'lucide-react';
+import { PawPrint, Plus, Stethoscope, Trash2, X, ChevronDown } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { useAppointment, useUpdateAppointmentStatus, useDeleteAppointment } from '../apis/appointment/hooks';
+import { useAppointment, useAssignVetToAppointment, useUpdateAppointmentStatus, useDeleteAppointment } from '../apis/appointment/hooks';
+import { useUsers } from '../apis/users/hooks';
 import { PetHubLoader } from '../components/PetHubLoader';
 
 const statuses = ['pending', 'confirmed', 'completed', 'cancelled'];
@@ -34,9 +35,7 @@ const statusConfig = {
 const paymentTone = {
   paid:      'bg-emerald-50 text-emerald-700',
   unpaid:    'bg-amber-50 text-amber-700',
-  failed:    'bg-red-50 text-red-700',
-  cancelled: 'bg-stone-100 text-stone-500',
-  initiated: 'bg-blue-50 text-blue-700',
+
 };
 
 function StatusDropdown({ value, onChange, disabled }) {
@@ -123,15 +122,108 @@ const formatTime = (dateString) =>
 const formatDate = (dateString) =>
   new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
+function AssignVetModal({ appointment, vets, onConfirm, onCancel, isAssigning }) {
+  const [selectedVetId, setSelectedVetId] = useState(
+    appointment.veterinarianId?._id || appointment.veterinarianId || ""
+  );
+
+  const selectedVet = vets.find((v) => v._id === selectedVetId);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F5A623]/10 backdrop-blur-[3px] px-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6">
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FFF0D6]">
+              <Stethoscope className="h-5 w-5 text-[#F5A623]" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-[#2D2D2D]">Assign Veterinarian</h3>
+              <p className="text-xs text-gray-400">{appointment.bookingId}</p>
+            </div>
+          </div>
+          <button onClick={onCancel} className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <p className="text-sm text-[#7A6A50] mb-4">
+          Select a veterinarian to assign to <span className="font-semibold text-[#2D2D2D]">{appointment.petName}</span>'s appointment.
+        </p>
+
+        {vets.length === 0 ? (
+          <div className="rounded-2xl bg-[#FAFAF8] px-4 py-6 text-center text-sm text-gray-400">
+            No veterinarians found. Assign the veterinarian role first.
+          </div>
+        ) : (
+          <div className="relative">
+            <select
+              value={selectedVetId}
+              onChange={(e) => setSelectedVetId(e.target.value)}
+              className="w-full appearance-none rounded-2xl border border-gray-200 bg-[#FAFAF8] px-4 py-3 pr-10 text-sm font-semibold text-[#2D2D2D] outline-none focus:border-[#F5A623] focus:ring-2 focus:ring-[#F5A623]/20 transition cursor-pointer"
+            >
+              <option value="" disabled>Select a veterinarian…</option>
+              {vets.map((vet) => {
+                const name = vet.fullName || vet.displayName || vet.email;
+                return (
+                  <option key={vet._id} value={vet._id}>
+                    {name}
+                  </option>
+                );
+              })}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          </div>
+        )}
+
+        {/* Selected vet preview */}
+        {selectedVet && (
+          <div className="mt-3 flex items-center gap-3 rounded-2xl bg-[#FFF8EE] px-4 py-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#F5A623,#FFB347)] text-sm font-bold text-white">
+              {(selectedVet.fullName || selectedVet.displayName || selectedVet.email).charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[#2D2D2D] truncate">
+                {selectedVet.fullName || selectedVet.displayName || "—"}
+              </p>
+              <p className="text-xs text-gray-400 truncate">{selectedVet.email}</p>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-5 flex gap-3">
+          <button onClick={onCancel} disabled={isAssigning}
+            className="flex-1 rounded-xl border border-[#E8D9C4] bg-white py-2.5 text-sm font-semibold text-[#5B4A36] hover:bg-[#FFF8EE] transition-colors disabled:opacity-50">
+            Cancel
+          </button>
+          <button
+            onClick={() => selectedVetId && onConfirm(selectedVetId)}
+            disabled={isAssigning || !selectedVetId}
+            className="flex-1 rounded-xl bg-[linear-gradient(135deg,#F5A623,#FFB347)] py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(245,166,35,0.28)] hover:opacity-90 disabled:opacity-50 transition-all"
+          >
+            {isAssigning ? "Assigning…" : "Assign"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export const AdminAppointmentsPage = () => {
   const queryClient = useQueryClient();
   const { data: appointmentsResponse, isLoading } = useAppointment();
+  const { data: usersResponse } = useUsers();
   const { mutateAsync: updateStatus, isPending } = useUpdateAppointmentStatus();
   const { mutateAsync: deleteAppointment, isPending: isDeleting } = useDeleteAppointment();
+  const { mutateAsync: assignVet, isPending: isAssigning } = useAssignVetToAppointment();
   const [loadingId, setLoadingId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [assignTarget, setAssignTarget] = useState(null);
 
   const appointments = appointmentsResponse?.data ?? [];
+  const vets = (usersResponse?.data ?? []).filter((u) => u.role === "veterinarian");
 
   const statusCounts = useMemo(
     () =>
@@ -169,6 +261,18 @@ export const AdminAppointmentsPage = () => {
     }
   };
 
+  const handleAssignVet = async (veterinarianId) => {
+    try {
+      await assignVet({ appointmentId: assignTarget._id, veterinarianId });
+      await queryClient.invalidateQueries({ queryKey: ['get-appointment'] });
+      toast.success('Veterinarian assigned.');
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+    } finally {
+      setAssignTarget(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <PetHubLoader
@@ -187,6 +291,16 @@ export const AdminAppointmentsPage = () => {
           onConfirm={handleDelete}
           onCancel={() => setDeleteTarget(null)}
           isDeleting={isDeleting}
+        />
+      )}
+
+      {assignTarget && (
+        <AssignVetModal
+          appointment={assignTarget}
+          vets={vets}
+          onConfirm={handleAssignVet}
+          onCancel={() => setAssignTarget(null)}
+          isAssigning={isAssigning}
         />
       )}
 
@@ -243,6 +357,9 @@ export const AdminAppointmentsPage = () => {
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Status
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Assigned To
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Actions
@@ -309,15 +426,39 @@ export const AdminAppointmentsPage = () => {
                     />
                   </td>
 
+                  {/* Assigned To */}
+                  <td className="px-6 py-4">
+                    {appointment.veterinarianId ? (
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-gray-800 truncate max-w-[120px]">
+                            {appointment.veterinarianId.fullName || appointment.veterinarianId.displayName || "—"}
+                          </p>
+                        </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
+                  </td>
+
                   {/* Actions */}
                   <td className="px-4 py-4">
-                    <button
-                      onClick={() => setDeleteTarget(appointment)}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-[#B78331] hover:bg-[#FFF8EE] transition-colors"
-                      title="Delete appointment"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      {appointment.status === 'confirmed' && (
+                        <button
+                          onClick={() => setAssignTarget(appointment)}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg text-[#F5A623] hover:bg-[#FFF8EE] transition-colors"
+                          title="Assign veterinarian"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setDeleteTarget(appointment)}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-[#B78331] hover:bg-[#FFF8EE] transition-colors"
+                        title="Delete appointment"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

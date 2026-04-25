@@ -77,6 +77,7 @@ export const AdminDashboardPage = () => {
       note: "All synced PetHub accounts",
       icon: Users,
       gradient: "from-blue-400 to-blue-600",
+      link: "/admin/users",
     },
     {
       label: "Open bookings",
@@ -84,6 +85,7 @@ export const AdminDashboardPage = () => {
       note: "Pending and confirmed appointments",
       icon: CalendarClock,
       gradient: "from-emerald-400 to-emerald-600",
+      link: "/admin/appointments",
     },
     {
       label: "Live services",
@@ -91,13 +93,15 @@ export const AdminDashboardPage = () => {
       note: "Visible to booking users right now",
       icon: Settings2,
       gradient: "from-amber-400 to-amber-600",
+      link: "/admin/services",
     },
     {
-      label: "Pending adoption requests",
+      label: "Adoption requests",
       value: pendingRequests.length,
       note: `${adoptionPets.length} adoption pets in the gallery`,
       icon: BellRing,
       gradient: "from-rose-400 to-rose-600",
+      link: "/admin/adoption-requests",
     },
   ];
 
@@ -124,9 +128,9 @@ export const AdminDashboardPage = () => {
 
             {/* Stat Cards */}
             <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {statCards.map((card) => (
+              {statCards.map((card) => ( 
+                <a href={card.link} key={card.label} className="cursor-pointer">
                 <div
-                  key={card.label}
                   className="group bg-white rounded-2xl p-4 shadow-md border border-amber-100 hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
                 >
                   <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center shadow-md`}>
@@ -136,6 +140,7 @@ export const AdminDashboardPage = () => {
                   <p className="mt-1 text-3xl font-bold text-stone-800">{card.value}</p>
                   <p className="mt-1 text-xs text-amber-600">{card.note}</p>
                 </div>
+                </a>
               ))}
             </div>
           </div>

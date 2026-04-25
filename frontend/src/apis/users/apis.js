@@ -47,3 +47,10 @@ export const adminDeleteUser = ({ userId }) =>
     url: `/users/${userId}`,
     method: "DELETE",
   });
+
+export const adminCreateUser = ({ fullName, email, password, role }) =>
+  axiosInstance.request({
+    url: "/users",
+    method: "POST",
+    data: { fullName, email, password, role },
+  });

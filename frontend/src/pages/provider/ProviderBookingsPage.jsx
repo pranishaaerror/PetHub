@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { toast } from "react-toastify";
-
-const backendOrigin = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000/api").replace(
-  /\/?api\/?$/,
-  ""
-);
+import {
+  CalendarDays, ChevronRight, ClipboardList, FileText,
+  Stethoscope, Upload, X, CheckCircle2, Clock3, XCircle,
+  PawPrint, Save, Scissors,
+} from "lucide-react";
 import {
   useGroomerBookingMutations,
   useGroomerBookings,
@@ -14,372 +14,467 @@ import {
   useVetPetMedicalRecords,
 } from "../../apis/provider/hooks";
 
-const formatWhen = (value) =>
-  new Date(value).toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+const BACKEND = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000/api").replace(/\/?api\/?$/, "");
 
-export const ProviderBookingsPage = () => {
-  const { portal } = useOutletContext();
-  const isVet = portal === "vet";
+const formatWhen = (v) =>
+  new Date(v).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 
-  const vetQuery = useVetAppointments({ enabled: isVet });
-  const groomerQuery = useGroomerBookings({ enabled: !isVet });
-  const vetMutations = useVetAppointmentMutations();
-  const groomerMutations = useGroomerBookingMutations();
+const statusConfig = {
+  pending:   { icon: Clock3,       color: "text-amber-500",   bg: "bg-amber-50",   label: "Pending"   },
+  confirmed: { icon: CheckCircle2, color: "text-purple-500",  bg: "bg-purple-50",  label: "Confirmed" },
+  completed: { icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50", label: "Completed" },
+  cancelled: { icon: XCircle,      color: "text-red-400",     bg: "bg-red-50",     label: "Cancelled" },
+};
 
-  const incoming = isVet ? vetQuery.data?.incoming ?? [] : groomerQuery.data?.incoming ?? [];
-  const mine = isVet ? vetQuery.data?.mine ?? [] : groomerQuery.data?.mine ?? [];
+/* ── Vet appointment detail panel ── */
+function VetDetailPanel({ appointment, onClose, mutations }) {
+  const petId = appointment?.petId?._id ?? appointment?.petId ?? null;
+  const recordsQuery = useVetPetMedicalRecords(petId, { enabled: Boolean(petId) });
 
-  const [selectedId, setSelectedId] = useState(null);
-  const selected = useMemo(() => {
-    const pool = [...incoming, ...mine];
-    return pool.find((row) => row._id === selectedId) ?? null;
-  }, [incoming, mine, selectedId]);
+  const [diagnosis, setDiagnosis]               = useState(appointment.diagnosis ?? "");
+  const [consultationNotes, setConsultationNotes] = useState(appointment.consultationNotes ?? "");
+  const [recordTitle, setRecordTitle]             = useState("");
+  const [recordDesc, setRecordDesc]               = useState("");
+  const [uploading, setUploading]                 = useState(false);
 
-  const petId = selected?.petId?._id ?? selected?.petId ?? null;
-  const recordsQuery = useVetPetMedicalRecords(petId, { enabled: isVet && Boolean(petId) });
+  const cfg = statusConfig[appointment.status] ?? statusConfig.pending;
+  const StatusIcon = cfg.icon;
 
-  const [diagnosis, setDiagnosis] = useState("");
-  const [consultationNotes, setConsultationNotes] = useState("");
-  const [recordTitle, setRecordTitle] = useState("");
-  const [recordDescription, setRecordDescription] = useState("");
-  const [serviceNotes, setServiceNotes] = useState("");
-
-  const syncForm = (row) => {
-    if (!row) {
-      return;
-    }
-
-    setDiagnosis(row.diagnosis ?? "");
-    setConsultationNotes(row.consultationNotes ?? "");
-    setServiceNotes(row.serviceNotes ?? "");
-    setRecordTitle("");
-    setRecordDescription("");
-  };
-
-  const handleSelect = (row) => {
-    setSelectedId(row._id);
-    syncForm(row);
-  };
-
-  const handleAccept = async () => {
-    if (!selected) {
-      return;
-    }
-
+  const handleSave = async (complete = false) => {
     try {
-      if (isVet) {
-        await vetMutations.accept.mutateAsync(selected._id);
-      } else {
-        await groomerMutations.accept.mutateAsync(selected._id);
-      }
-      toast.success("Booking accepted.");
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
-    }
-  };
-
-  const handleReject = async () => {
-    if (!selected) {
-      return;
-    }
-
-    try {
-      if (isVet) {
-        await vetMutations.reject.mutateAsync(selected._id);
-      } else {
-        await groomerMutations.reject.mutateAsync(selected._id);
-      }
-      toast.success("Booking rejected.");
-      setSelectedId(null);
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
-    }
-  };
-
-  const handleSaveConsultation = async (complete = false) => {
-    if (!selected || !isVet) {
-      return;
-    }
-
-    try {
-      await vetMutations.consultation.mutateAsync({
-        id: selected._id,
+      await mutations.consultation.mutateAsync({
+        id: appointment._id,
         diagnosis,
         consultationNotes,
         status: complete ? "completed" : undefined,
       });
-      toast.success(complete ? "Visit marked complete." : "Consultation notes saved.");
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      toast.success(complete ? "Visit marked complete." : "Notes saved.");
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message);
     }
   };
 
-  const handleUploadReport = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file || !selected || !isVet) {
-      return;
-    }
-
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
     try {
-      await vetMutations.report.mutateAsync({ id: selected._id, file });
-      toast.success("Medical report uploaded.");
-      event.target.value = "";
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      await mutations.report.mutateAsync({ id: appointment._id, file });
+      toast.success("Report uploaded.");
+      e.target.value = "";
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message);
+    } finally {
+      setUploading(false);
     }
   };
 
-  const handleCreateRecord = async () => {
-    if (!selected || !isVet || !petId || !recordTitle.trim()) {
-      toast.error("Pet and record title are required.");
+  const handleAddRecord = async () => {
+    if (!petId || !recordTitle.trim()) {
+      toast.error("Record title is required.");
       return;
     }
-
     try {
-      await vetMutations.medicalRecord.mutateAsync({
+      await mutations.medicalRecord.mutateAsync({
         petId,
-        appointmentId: selected._id,
+        appointmentId: appointment._id,
         title: recordTitle.trim(),
-        description: recordDescription.trim(),
+        description: recordDesc.trim(),
         date: new Date().toISOString(),
         type: "consultation",
       });
       toast.success("Medical record added.");
       setRecordTitle("");
-      setRecordDescription("");
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      setRecordDesc("");
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message);
     }
   };
 
-  const handleSaveGroomerNotes = async () => {
-    if (!selected || isVet) {
-      return;
-    }
-
-    try {
-      await groomerMutations.notes.mutateAsync({ id: selected._id, serviceNotes });
-      toast.success("Service notes saved.");
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
-    }
-  };
-
-  const handleCompleteGroom = async () => {
-    if (!selected || isVet) {
-      return;
-    }
-
-    try {
-      await groomerMutations.complete.mutateAsync({ id: selected._id, serviceNotes });
-      toast.success("Service marked complete.");
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
-    }
-  };
-
-  const renderTable = (rows, emptyLabel) => (
-    <div className="overflow-hidden rounded-[24px] border border-[#F0E2CC] bg-white">
-      <table className="w-full text-left text-sm">
-        <thead className="bg-[#FFF8EE] text-xs font-semibold uppercase tracking-[0.18em] text-[#8B7B66]">
-          <tr>
-            <th className="px-4 py-3">When</th>
-            <th className="px-4 py-3">Pet</th>
-            <th className="px-4 py-3">Service</th>
-            <th className="px-4 py-3">Status</th>
-            <th className="px-4 py-3"> </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-[#F5E6CC]">
-          {rows.length ? (
-            rows.map((row) => (
-              <tr key={row._id} className="hover:bg-[#FFFBF4]">
-                <td className="px-4 py-3 font-semibold text-[#2D2D2D]">{formatWhen(row.appointmentTime)}</td>
-                <td className="px-4 py-3">
-                  <p className="font-semibold">{row.petName}</p>
-                  <p className="text-xs text-[#8B7B66]">{row.ownerName}</p>
-                </td>
-                <td className="px-4 py-3">{row.serviceId?.serviceName ?? "—"}</td>
-                <td className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#A77222]">
-                  {row.status}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <button
-                    type="button"
-                    onClick={() => handleSelect(row)}
-                    className="rounded-full bg-[#FFF4E2] px-3 py-1 text-xs font-semibold text-[#C77E1D]"
-                  >
-                    Manage
-                  </button>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={5} className="px-4 py-6 text-center text-sm text-[#6B6B6B]">
-                {emptyLabel}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
+  const inputCls = "w-full rounded-2xl border border-gray-200 bg-[#FAFAF8] px-4 py-3 text-sm outline-none focus:border-[#F5A623] focus:ring-2 focus:ring-[#F5A623]/20 transition resize-none";
 
   return (
-    <div className="pet-page space-y-8">
-      <div className="pet-card p-6">
-        <h1 className="text-3xl font-bold">{isVet ? "Appointments" : "Bookings"}</h1>
-        <p className="mt-2 text-sm text-[#6B6B6B]">
-          Accept new requests, document visits, and keep pet parents informed.
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#F5A623]/10 backdrop-blur-[3px] px-4 pb-4 sm:pb-0">
+      <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl bg-white shadow-[0_24px_70px_rgba(45,45,45,0.16)]">
+
+        {/* Header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white px-6 py-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF0D6]">
+              <Stethoscope className="h-5 w-5 text-[#F5A623]" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-[#2D2D2D]">
+                {appointment.serviceId?.serviceName ?? "Appointment"}
+              </h2>
+              <p className="text-xs text-gray-400">{appointment.bookingId}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+
+          {/* Pet + owner info */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {[
+              { label: "Pet", value: appointment.petName },
+              { label: "Owner", value: appointment.ownerName },
+              { label: "When", value: formatWhen(appointment.appointmentTime) },
+              { label: "Contact", value: appointment.contactNumber || appointment.ownerEmail },
+              { label: "Pet type", value: appointment.petType || "—" },
+              { label: "Status", value: (
+                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${cfg.bg} ${cfg.color}`}>
+                  <StatusIcon className="h-3 w-3" /> {cfg.label}
+                </span>
+              )},
+            ].map(({ label, value }) => (
+              <div key={label} className="rounded-2xl bg-[#FAFAF8] px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
+                <div className="mt-1 text-sm font-semibold text-[#2D2D2D]">{value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Diagnosis */}
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#B78331]">
+              <ClipboardList className="h-3.5 w-3.5" /> Diagnosis
+            </label>
+            <textarea
+              rows={3}
+              value={diagnosis}
+              onChange={(e) => setDiagnosis(e.target.value)}
+              className={inputCls}
+              placeholder="Enter diagnosis…"
+            />
+          </div>
+
+          {/* Treatment / consultation notes */}
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#B78331]">
+              <FileText className="h-3.5 w-3.5" /> Treatment notes
+            </label>
+            <textarea
+              rows={4}
+              value={consultationNotes}
+              onChange={(e) => setConsultationNotes(e.target.value)}
+              className={inputCls}
+              placeholder="Medications prescribed, follow-up instructions…"
+            />
+          </div>
+
+          {/* Save / complete buttons */}
+          {appointment.status !== 'completed' && (
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => handleSave(false)}
+                disabled={mutations.consultation.isPending}
+                className="flex items-center gap-2 rounded-full border border-[#E8D9C4] bg-white px-5 py-2.5 text-sm font-semibold text-[#5B4A36] hover:bg-[#FFF8EE] transition-colors disabled:opacity-50"
+              >
+                <Save className="h-4 w-4 text-[#F5A623]" />
+                Save notes
+              </button>
+              <button
+                onClick={() => handleSave(true)}
+                disabled={mutations.consultation.isPending}
+                className="flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#F5A623,#FFB347)] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_6px_16px_rgba(245,166,35,0.28)] hover:opacity-90 transition-all disabled:opacity-50"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Mark complete
+              </button>
+            </div>
+          )}
+
+          {/* Upload report */}
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#B78331]">
+              <Upload className="h-3.5 w-3.5" /> Upload medical report
+            </label>
+            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F0DFC0] bg-[#FFF8EE] py-5 transition hover:border-[#F5A623] hover:bg-[#FFF5E0]">
+              <Upload className="h-6 w-6 text-[#F5A623]" />
+              <p className="text-xs font-semibold text-[#B78331]">
+                {uploading ? "Uploading…" : "Click to upload PDF or image"}
+              </p>
+              <p className="text-[11px] text-gray-400">PDF, JPG, PNG · max 12MB</p>
+              <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+            </label>
+            {appointment.medicalReportUrl && (
+              <a
+                href={`${BACKEND}${appointment.medicalReportUrl}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[#F5A623] hover:underline"
+              >
+                <FileText className="h-3.5 w-3.5" /> View uploaded report
+              </a>
+            )}
+          </div>
+
+          {/* Medical history + add record */}
+          {petId ? (
+            <div className="rounded-2xl border border-[#F0E2CC] bg-[#FFF8EE] p-5">
+              <p className="mb-3 text-sm font-bold text-[#2D2D2D]">Medical history</p>
+              <div className="max-h-44 space-y-2 overflow-y-auto">
+                {(recordsQuery.data ?? []).length ? (
+                  recordsQuery.data.map((rec) => (
+                    <div key={rec._id} className="rounded-xl bg-white px-3 py-2.5 shadow-sm">
+                      <p className="text-sm font-semibold text-[#2D2D2D]">{rec.title}</p>
+                      <p className="text-[11px] uppercase tracking-wider text-[#B78331]">{rec.type}</p>
+                      <p className="text-xs text-gray-400">{new Date(rec.date).toLocaleDateString()}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-gray-400">No records yet.</p>
+                )}
+              </div>
+
+              <div className="mt-4 space-y-2 border-t border-[#F0E2CC] pt-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#B78331]">Add record</p>
+                <input
+                  value={recordTitle}
+                  onChange={(e) => setRecordTitle(e.target.value)}
+                  placeholder="Record title"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#F5A623] focus:ring-2 focus:ring-[#F5A623]/20 transition"
+                />
+                <textarea
+                  value={recordDesc}
+                  onChange={(e) => setRecordDesc(e.target.value)}
+                  placeholder="Details for the owner-facing timeline"
+                  rows={2}
+                  className="w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#F5A623] focus:ring-2 focus:ring-[#F5A623]/20 transition"
+                />
+                <button
+                  onClick={handleAddRecord}
+                  disabled={mutations.medicalRecord.isPending}
+                  className="w-full rounded-xl bg-[linear-gradient(135deg,#F5A623,#FFB347)] py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-all"
+                >
+                  Add consultation record
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400">
+              This booking is not linked to a pet profile — medical history unavailable.
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Groomer detail panel (unchanged logic, cleaner UI) ── */
+function GroomerDetailPanel({ booking, onClose, mutations }) {
+  const [serviceNotes, setServiceNotes] = useState(booking.serviceNotes ?? "");
+
+  const handleSave = async () => {
+    try {
+      await mutations.notes.mutateAsync({ id: booking._id, serviceNotes });
+      toast.success("Notes saved.");
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message);
+    }
+  };
+
+  const handleComplete = async () => {
+    try {
+      await mutations.complete.mutateAsync({ id: booking._id, serviceNotes });
+      toast.success("Service marked complete.");
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#F5A623]/10 backdrop-blur-[3px] px-4 pb-4 sm:pb-0">
+      <div className="w-full max-w-lg rounded-3xl bg-white shadow-[0_24px_70px_rgba(45,45,45,0.16)]">
+        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF0D6]">
+              <Scissors className="h-5 w-5 text-[#F5A623]" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-[#2D2D2D]">{booking.serviceId?.serviceName ?? "Grooming"}</h2>
+              <p className="text-xs text-gray-400">{booking.petName} · {formatWhen(booking.appointmentTime)}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#B78331]">Service notes</label>
+            <textarea
+              rows={4}
+              value={serviceNotes}
+              onChange={(e) => setServiceNotes(e.target.value)}
+              placeholder="Coat treatment, temperament, special handling…"
+              className="w-full resize-none rounded-2xl border border-gray-200 bg-[#FAFAF8] px-4 py-3 text-sm outline-none focus:border-[#F5A623] focus:ring-2 focus:ring-[#F5A623]/20 transition"
+            />
+          </div>
+          <div className="flex gap-3">
+            <button onClick={handleSave} disabled={mutations.notes.isPending}
+              className="flex-1 rounded-full border border-[#E8D9C4] bg-white py-2.5 text-sm font-semibold text-[#5B4A36] hover:bg-[#FFF8EE] transition-colors disabled:opacity-50">
+              Save notes
+            </button>
+            <button onClick={handleComplete} disabled={mutations.complete.isPending}
+              className="flex-1 rounded-full bg-[linear-gradient(135deg,#F5A623,#FFB347)] py-2.5 text-sm font-semibold text-white shadow-[0_6px_16px_rgba(245,166,35,0.28)] hover:opacity-90 disabled:opacity-50 transition-all">
+              Mark complete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main page ── */
+export const ProviderBookingsPage = () => {
+  const { portal } = useOutletContext();
+  const isVet = portal === "vet";
+
+  const vetQuery     = useVetAppointments({ enabled: isVet });
+  const groomerQuery = useGroomerBookings({ enabled: !isVet });
+  const vetMutations     = useVetAppointmentMutations();
+  const groomerMutations = useGroomerBookingMutations();
+
+  const [selectedId, setSelectedId] = useState(null);
+
+  // For vet: show only appointments assigned to this vet (mine)
+  // For groomer: show incoming + mine
+  const rows = useMemo(() => {
+    if (isVet) return vetQuery.data?.mine ?? [];
+    return [...(groomerQuery.data?.incoming ?? []), ...(groomerQuery.data?.mine ?? [])];
+  }, [isVet, vetQuery.data, groomerQuery.data]);
+
+  const selected = useMemo(() => rows.find((r) => r._id === selectedId) ?? null, [rows, selectedId]);
+
+  const statusOrder = { pending: 0, confirmed: 1, completed: 2, cancelled: 3 };
+  const sorted = [...rows].sort((a, b) => (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9));
+
+  return (
+    <div className="pet-page space-y-6">
+
+      {/* Header */}
+      <div className="pet-card p-6 md:p-8">
+        <span className="pet-chip">{isVet ? "Vet overview" : "Groomer overview"}</span>
+        <h1 className="mt-3 text-3xl font-bold text-[#2D2D2D] md:text-4xl">
+          {isVet ? "My assigned appointments" : "My bookings"}
+        </h1>
+        <p className="mt-2 max-w-xl text-sm leading-7 text-[#6B6B6B]">
+          {isVet
+            ? "View appointments assigned to you by the admin. Add diagnosis, treatment notes, and upload reports."
+            : "Manage your grooming bookings and service notes."}
         </p>
       </div>
 
-      <section className="space-y-3">
-        <h2 className="text-xl font-bold">Incoming</h2>
-        {renderTable(incoming, "No incoming requests right now.")}
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-xl font-bold">{isVet ? "My appointments" : "My bookings"}</h2>
-        {renderTable(mine, "You have no assigned visits yet.")}
-      </section>
-
-      {selected ? (
-        <div className="pet-card grid gap-6 p-6 lg:grid-cols-2">
-          <div>
-            <span className="pet-chip">Selected visit</span>
-            <h3 className="mt-3 text-2xl font-bold">{selected.serviceId?.serviceName ?? "Service"}</h3>
-            <p className="mt-2 text-sm text-[#6B6B6B]">
-              {selected.petName} · {formatWhen(selected.appointmentTime)}
-            </p>
-            <p className="mt-2 text-sm text-[#6B6B6B]">
-              Owner {selected.ownerName} · {selected.contactNumber || selected.ownerEmail}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button type="button" onClick={handleAccept} className="pet-button-primary">
-                Accept
-              </button>
-              <button type="button" onClick={handleReject} className="pet-button-secondary">
-                Reject
-              </button>
+      {/* Stats row */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {(["pending", "confirmed", "completed", "cancelled"] ).map((s) => {
+          const cfg = statusConfig[s];
+          const count = rows.filter((r) => r.status === s).length;
+          return (
+            <div key={s} className={`rounded-2xl px-4 py-3 ${cfg.bg}`}>
+              <div className="flex items-center gap-1.5">
+                <cfg.icon className={`h-3.5 w-3.5 ${cfg.color}`} />
+                <p className={`text-xs font-semibold capitalize ${cfg.color}`}>{cfg.label}</p>
+              </div>
+              <p className="mt-1 text-2xl font-bold text-[#2D2D2D]">{count}</p>
             </div>
-            {isVet && selected.medicalReportUrl ? (
-              <a
-                href={`${backendOrigin}${selected.medicalReportUrl}`}
-                className="mt-4 inline-flex text-sm font-semibold text-[#C77E1D]"
-                target="_blank"
-                rel="noreferrer"
-              >
-                View uploaded report
-              </a>
-            ) : null}
-          </div>
+          );
+        })}
+      </div>
 
-          <div className="space-y-4">
-            {isVet ? (
-              <>
-                <div>
-                  <label className="text-xs font-semibold uppercase tracking-[0.18em] text-[#A97C3A]">
-                    Diagnosis
-                  </label>
-                  <textarea
-                    value={diagnosis}
-                    onChange={(event) => setDiagnosis(event.target.value)}
-                    className="mt-2 min-h-[90px] w-full rounded-[18px] border border-[#F0E2CC] bg-white px-4 py-3 text-sm outline-none ring-2 ring-transparent focus:ring-[#F5C062]"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold uppercase tracking-[0.18em] text-[#A97C3A]">
-                    Treatment notes
-                  </label>
-                  <textarea
-                    value={consultationNotes}
-                    onChange={(event) => setConsultationNotes(event.target.value)}
-                    className="mt-2 min-h-[90px] w-full rounded-[18px] border border-[#F0E2CC] bg-white px-4 py-3 text-sm outline-none ring-2 ring-transparent focus:ring-[#F5C062]"
-                  />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => handleSaveConsultation(false)} className="pet-button-secondary">
-                    Save notes
-                  </button>
-                  <button type="button" onClick={() => handleSaveConsultation(true)} className="pet-button-primary">
-                    Complete visit
-                  </button>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold uppercase tracking-[0.18em] text-[#A97C3A]">
-                    Upload medical report
-                  </label>
-                  <input type="file" accept=".pdf,image/*" className="mt-2 w-full text-sm" onChange={handleUploadReport} />
-                </div>
-
-                {petId ? (
-                  <div className="rounded-[22px] bg-[#FFF8EE] p-4">
-                    <p className="text-sm font-semibold text-[#2D2D2D]">Medical history</p>
-                    <div className="mt-3 max-h-48 space-y-2 overflow-y-auto text-sm text-[#6B6B6B]">
-                      {(recordsQuery.data ?? []).map((record) => (
-                        <div key={record._id} className="rounded-[16px] bg-white px-3 py-2 shadow-sm">
-                          <p className="font-semibold text-[#2D2D2D]">{record.title}</p>
-                          <p className="text-xs uppercase tracking-[0.16em] text-[#B78331]">{record.type}</p>
-                          <p className="text-xs">{new Date(record.date).toLocaleDateString()}</p>
+      {/* Table */}
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                {["When", "Pet & Owner", "Service", "Status", ""].map((h) => (
+                  <th key={h} className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {sorted.length ? sorted.map((row) => {
+                const cfg = statusConfig[row.status] ?? statusConfig.pending;
+                const StatusIcon = cfg.icon;
+                return (
+                  <tr key={row._id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <CalendarDays className="h-4 w-4 shrink-0 text-[#F5A623]" />
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {new Date(row.appointmentTime).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: true })}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {new Date(row.appointmentTime).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                          </p>
                         </div>
-                      ))}
-                      {!recordsQuery.data?.length ? <p>No records loaded yet.</p> : null}
-                    </div>
-                    <div className="mt-4 space-y-2">
-                      <input
-                        value={recordTitle}
-                        onChange={(event) => setRecordTitle(event.target.value)}
-                        placeholder="New record title"
-                        className="w-full rounded-[16px] border border-[#F0E2CC] bg-white px-3 py-2 text-sm outline-none"
-                      />
-                      <textarea
-                        value={recordDescription}
-                        onChange={(event) => setRecordDescription(event.target.value)}
-                        placeholder="Details for the owner-facing timeline"
-                        className="min-h-[70px] w-full rounded-[16px] border border-[#F0E2CC] bg-white px-3 py-2 text-sm outline-none"
-                      />
-                      <button type="button" onClick={handleCreateRecord} className="pet-button-primary w-full">
-                        Add consultation record
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-semibold text-gray-900">{row.petName}</p>
+                      <p className="text-xs text-gray-400">{row.ownerName}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-700">{row.serviceId?.serviceName ?? "—"}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${cfg.bg} ${cfg.color}`}>
+                        <StatusIcon className="h-3 w-3" /> {cfg.label}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => setSelectedId(row._id)}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-[#FFF5E0] px-4 py-1.5 text-xs font-semibold text-[#C77E1D] hover:bg-[#FFE9A8] transition-colors"
+                      >
+                        Manage <ChevronRight className="h-3.5 w-3.5" />
                       </button>
+                    </td>
+                  </tr>
+                );
+              }) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-16 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF0D6]">
+                        <PawPrint className="h-7 w-7 text-[#F5A623]" />
+                      </div>
+                      <p className="text-sm font-semibold text-gray-600">No appointments assigned yet.</p>
+                      <p className="text-xs text-gray-400">The admin will assign appointments to you.</p>
                     </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-[#6B6B6B]">
-                    This booking is not linked to a pet profile yet, so medical history is unavailable.
-                  </p>
-                )}
-              </>
-            ) : (
-              <>
-                <div>
-                  <label className="text-xs font-semibold uppercase tracking-[0.18em] text-[#A97C3A]">
-                    Service notes
-                  </label>
-                  <textarea
-                    value={serviceNotes}
-                    onChange={(event) => setServiceNotes(event.target.value)}
-                    placeholder="Coat treatment, temperament, or special handling"
-                    className="mt-2 min-h-[120px] w-full rounded-[18px] border border-[#F0E2CC] bg-white px-4 py-3 text-sm outline-none ring-2 ring-transparent focus:ring-[#F5C062]"
-                  />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={handleSaveGroomerNotes} className="pet-button-secondary">
-                    Save notes
-                  </button>
-                  <button type="button" onClick={handleCompleteGroom} className="pet-button-primary">
-                    Mark completed
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      ) : null}
+      </div>
+
+      {/* Detail panel */}
+      {selected && isVet && (
+        <VetDetailPanel
+          appointment={selected}
+          onClose={() => setSelectedId(null)}
+          mutations={vetMutations}
+        />
+      )}
+      {selected && !isVet && (
+        <GroomerDetailPanel
+          booking={selected}
+          onClose={() => setSelectedId(null)}
+          mutations={groomerMutations}
+        />
+      )}
     </div>
   );
 };

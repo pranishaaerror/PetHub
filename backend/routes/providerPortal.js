@@ -83,28 +83,12 @@ router.get("/vet/appointments", verifyToken, requireRole("veterinarian"), async 
       .populate(["serviceId", "userId", "petId", "veterinarianId", "groomerId"])
       .sort({ appointmentTime: 1, createdAt: -1 });
 
-    const vetScoped = items.filter((apt) => isVetService(apt));
-    const incoming = vetScoped.filter((apt) => {
-      if (!["pending", "confirmed"].includes(apt.status)) {
-        return false;
-      }
-
-      if (effectiveVetAcceptance(apt) !== "pending") {
-        return false;
-      }
-
-      if (apt.veterinarianId && String(apt.veterinarianId._id ?? apt.veterinarianId) !== String(me)) {
-        return false;
-      }
-
-      return true;
-    });
-
-    const mine = vetScoped.filter(
+    // All appointments assigned to this vet
+    const mine = items.filter(
       (apt) => apt.veterinarianId && String(apt.veterinarianId._id ?? apt.veterinarianId) === String(me)
     );
 
-    res.json({ incoming, mine, all: vetScoped });
+    res.json({ incoming: [], mine, all: mine });
   } catch (error) {
     res.status(500).json({ message: error.message || "Server error" });
   }
@@ -211,27 +195,19 @@ router.patch("/vet/appointments/:id/consultation", verifyToken, requireRole("vet
   try {
     const apt = await loadAppointment(req.params.id);
 
-    if (!apt || !isVetService(apt)) {
+    if (!apt) {
       return res.status(404).json({ message: "Appointment not found." });
     }
 
-    if (!apt.veterinarianId || String(apt.veterinarianId) !== String(req.dbUser._id)) {
+    if (!apt.veterinarianId || String(apt.veterinarianId._id ?? apt.veterinarianId) !== String(req.dbUser._id)) {
       return res.status(403).json({ message: "Only the assigned veterinarian can update this visit." });
     }
 
     const { diagnosis, consultationNotes, status } = req.body;
 
-    if (diagnosis !== undefined) {
-      apt.diagnosis = String(diagnosis).trim();
-    }
-
-    if (consultationNotes !== undefined) {
-      apt.consultationNotes = String(consultationNotes).trim();
-    }
-
-    if (status === "completed") {
-      apt.status = "completed";
-    }
+    if (diagnosis !== undefined) apt.diagnosis = String(diagnosis).trim();
+    if (consultationNotes !== undefined) apt.consultationNotes = String(consultationNotes).trim();
+    if (status === "completed") apt.status = "completed";
 
     await apt.save();
 
@@ -259,11 +235,11 @@ router.post(
     try {
       const apt = await loadAppointment(req.params.id);
 
-      if (!apt || !isVetService(apt)) {
+      if (!apt) {
         return res.status(404).json({ message: "Appointment not found." });
       }
 
-      if (!apt.veterinarianId || String(apt.veterinarianId) !== String(req.dbUser._id)) {
+      if (!apt.veterinarianId || String(apt.veterinarianId._id ?? apt.veterinarianId) !== String(req.dbUser._id)) {
         return res.status(403).json({ message: "Only the assigned veterinarian can upload reports." });
       }
 
@@ -292,7 +268,6 @@ router.get("/vet/pets/:petId/medical-records", verifyToken, requireRole("veterin
     const allowed = await Appointment.exists({
       petId,
       veterinarianId: req.dbUser._id,
-      vetAcceptance: "accepted",
       status: { $in: ["pending", "confirmed", "completed"] },
     });
 
@@ -334,7 +309,6 @@ router.post("/vet/medical-records", verifyToken, requireRole("veterinarian"), as
       const linked = await Appointment.exists({
         petId: pet._id,
         veterinarianId: req.dbUser._id,
-        vetAcceptance: "accepted",
       });
 
       if (!linked) {

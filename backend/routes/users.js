@@ -121,6 +121,55 @@ router.get("/", verifyToken, async (req, res) => {
   }
 });
 
+// Admin: create a new user directly
+router.post("/", verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can create users." });
+    }
+
+    const { getAuth } = await import("firebase-admin/auth");
+    const { firebaseApp } = await import("../firebaseAdmin.js");
+    const { syncFirebaseUser } = await import("../services/currentUserService.js");
+
+    const email = (req.body.email ?? "").trim().toLowerCase();
+    const fullName = (req.body.fullName ?? "").trim();
+    const password = (req.body.password ?? "").trim();
+    const role = (req.body.role ?? "user").trim();
+
+    if (!email || !fullName || !password) {
+      return res.status(400).json({ message: "Email, full name, and password are required." });
+    }
+
+    const allowedRoles = ["user", "admin", "veterinarian"];
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({ message: "Invalid role." });
+    }
+
+    const auth = getAuth(firebaseApp);
+
+    // Check if already exists
+    try {
+      await auth.getUserByEmail(email);
+      return res.status(409).json({ message: "A user with this email already exists." });
+    } catch (err) {
+      if (err.code !== "auth/user-not-found") throw err;
+    }
+
+    const firebaseUser = await auth.createUser({ email, password, displayName: fullName });
+    const dbUser = await syncFirebaseUser({ uid: firebaseUser.uid, email });
+    dbUser.fullName = fullName;
+    dbUser.displayName = fullName;
+    dbUser.role = role;
+    dbUser.emailVerified = true;
+    await dbUser.save();
+
+    res.status(201).json({ message: "User created successfully.", user: dbUser });
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+});
+
 // Admin: update a user's role or disabled status
 router.patch("/:userId", verifyToken, async (req, res) => {
   try {

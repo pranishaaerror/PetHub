@@ -86,19 +86,19 @@ router.post("/",verifyToken,async(req,res) => {
         const appointment = await Appointment.findById(newAppointment._id).populate(["userId", "serviceId"]);
         let emailSent = false;
 
-        try {
-          await sendAppointmentConfirmationEmail({
-            to: appointment.ownerEmail,
-            ownerName: appointment.ownerName,
-            bookingId: appointment.bookingId,
-            serviceName: appointment.serviceId.serviceName,
-            appointmentTime: appointment.appointmentTime,
-            petName: appointment.petName,
-          });
-          emailSent = true;
-        } catch (emailError) {
-          console.error("Appointment confirmation email failed:", emailError.message);
-        }
+        // try {
+        //   await sendAppointmentConfirmationEmail({
+        //     to: appointment.ownerEmail,
+        //     ownerName: appointment.ownerName,
+        //     bookingId: appointment.bookingId,
+        //     serviceName: appointment.serviceId.serviceName,
+        //     appointmentTime: appointment.appointmentTime,
+        //     petName: appointment.petName,
+        //   });
+        //   emailSent = true;
+        // } catch (emailError) {
+        //   console.error("Appointment confirmation email failed:", emailError.message);
+        // }
 
     res.status(201).json({
       message: emailSent
@@ -128,7 +128,7 @@ router.post("/",verifyToken,async(req,res) => {
             }
 
             const appointment = await Appointment.find(query)
-              .populate(["userId", "serviceId"])
+              .populate(["userId", "serviceId", "veterinarianId"])
               .sort({ appointmentTime: 1, createdAt: -1 });
             res.json(appointment);
           } catch (err) {
@@ -257,6 +257,42 @@ router.patch("/:appointmentId", verifyToken, async (req, res) => {
     }
 
     return res.status(400).json({ message: "Send status \"cancelled\" or a new appointmentTime to reschedule." });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.patch("/:appointmentId/assign-vet", verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can assign veterinarians." });
+    }
+
+    const { veterinarianId } = req.body;
+
+    const vet = await User.findById(veterinarianId);
+    if (!vet || vet.role !== "veterinarian") {
+      return res.status(400).json({ message: "Selected user is not a veterinarian." });
+    }
+
+    const appointment = await Appointment.findByIdAndUpdate(
+      req.params.appointmentId,
+      { veterinarianId },
+      { new: true, runValidators: true }
+    ).populate(["userId", "serviceId"]);
+
+    if (!appointment) {
+      return res.status(404).json({ message: "Appointment not found." });
+    }
+
+    await createNotification({
+      userId: appointment.userId._id,
+      title: "Veterinarian assigned",
+      message: `Dr. ${vet.fullName || vet.displayName} has been assigned to your appointment for ${appointment.petName}.`,
+      type: "booking",
+    });
+
+    res.json({ message: "Veterinarian assigned successfully.", appointment });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

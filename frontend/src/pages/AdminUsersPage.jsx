@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Listbox } from "@headlessui/react";
-import { Mail, PawPrint, Phone, ShieldCheck, Trash2, ChevronDown, X, Check } from "lucide-react";
+import { Mail, PawPrint, Phone, Plus, ShieldCheck, Trash2, ChevronDown, X, Check, Eye, EyeOff } from "lucide-react";
 import { toast } from "react-toastify";
 import { PetHubLoader } from "../components/PetHubLoader";
-import { useUsers, useAdminUpdateUser, useAdminDeleteUser } from "../apis/users/hooks";
+import { useUsers, useAdminUpdateUser, useAdminDeleteUser, useAdminCreateUser } from "../apis/users/hooks";
 
-const ROLES = ["user", "admin", "veterinarian", "groomer"];
+const ROLES = ["user", "admin", "veterinarian"];
 
 const roleConfig = {
   admin: { tone: "bg-purple-50 text-purple-700 ring-1 ring-purple-600/20", dot: "bg-purple-400" },
@@ -47,6 +47,89 @@ function RoleDropdown({ value, onChange, disabled }) {
           ))}
         </Listbox.Options>
       </Listbox>
+    </div>
+  );
+}
+
+function CreateUserModal({ onClose, onSave, isSaving }) {
+  const [form, setForm] = useState({ fullName: "", email: "", password: "", role: "user" });
+  const [showPassword, setShowPassword] = useState(false);
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.fullName.trim() || !form.email.trim() || !form.password.trim()) {
+      toast.error("Full name, email, and password are required.");
+      return;
+    }
+    onSave(form);
+  };
+
+  const inputCls = "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition bg-white";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F5A623]/10 backdrop-blur-[3px] px-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FFF0D6]">
+              <PawPrint className="h-5 w-5 text-[#F5A623]" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-[#2D2D2D]">Add New User</h3>
+              <p className="text-xs text-gray-400">Create a PetHub account directly</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Full Name <span className="text-amber-500">*</span></label>
+            <input value={form.fullName} onChange={(e) => set("fullName", e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Email <span className="text-amber-500">*</span></label>
+            <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Password <span className="text-amber-500">*</span></label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+                onChange={(e) => set("password", e.target.value)}
+                className={`${inputCls} pr-10`}
+              />
+              <button type="button" onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Role</label>
+            <select value={form.role} onChange={(e) => set("role", e.target.value)} className={inputCls}>
+              {ROLES.map((r) => (
+                <option key={r} value={r} className="capitalize">{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose}
+              className="flex-1 rounded-xl border border-[#E8D9C4] bg-white py-2.5 text-sm font-semibold text-[#5B4A36] hover:bg-[#FFF8EE] transition-colors">
+              Cancel
+            </button>
+            <button type="submit" disabled={isSaving}
+              className="flex-1 rounded-xl bg-[linear-gradient(135deg,#F5A623,#FFB347)] py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(245,166,35,0.28)] hover:opacity-90 disabled:opacity-50 transition-all">
+              {isSaving ? "Creating…" : "Create user"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
@@ -94,9 +177,11 @@ export const AdminUsersPage = () => {
   const { data: usersResponse, isLoading } = useUsers();
   const { mutateAsync: updateUser, isPending: isUpdating } = useAdminUpdateUser();
   const { mutateAsync: deleteUser, isPending: isDeleting } = useAdminDeleteUser();
+  const { mutateAsync: createUser, isPending: isCreating } = useAdminCreateUser();
 
   const [loadingId, setLoadingId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const users = usersResponse?.data ?? [];
 
@@ -143,6 +228,17 @@ export const AdminUsersPage = () => {
     }
   };
 
+  const handleCreateUser = async (data) => {
+    try {
+      await createUser(data);
+      await queryClient.invalidateQueries({ queryKey: ["get-users"] });
+      toast.success("User created successfully.");
+      setShowCreateModal(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message);
+    }
+  };
+
   if (isLoading) {
     return (
       <PetHubLoader
@@ -154,6 +250,14 @@ export const AdminUsersPage = () => {
 
   return (
     <div className="p-6 space-y-6">
+      {showCreateModal && (
+        <CreateUserModal
+          onClose={() => setShowCreateModal(false)}
+          onSave={handleCreateUser}
+          isSaving={isCreating}
+        />
+      )}
+
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">All Users</h1>
@@ -161,9 +265,18 @@ export const AdminUsersPage = () => {
             Manage roles, account status, and remove users from the platform.
           </p>
         </div>
-        <div className="rounded-2xl bg-amber-50 px-5 py-4 border border-amber-100">
-          <p className="text-xs font-semibold uppercase tracking-widest text-amber-600">Total users</p>
-          <p className="mt-1 text-3xl font-bold text-gray-800">{users.length}</p>
+        <div className="flex items-center gap-3">
+          <div className="rounded-2xl bg-amber-50 px-5 py-4 border border-amber-100">
+            <p className="text-xs font-semibold uppercase tracking-widest text-amber-600">Total users</p>
+            <p className="mt-1 text-3xl font-bold text-gray-800">{users.length}</p>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#F5A623,#FFB347)] px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(245,166,35,0.28)] hover:opacity-90 transition-all"
+          >
+            <Plus className="h-4 w-4" />
+            Add User
+          </button>
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createAppointment, deleteAppointment, getAppointments, updateAppointmentStatus, updateMyAppointment } from "./apis";
+import { assignVetToAppointment, createAppointment, deleteAppointment, getAppointments, updateAppointmentStatus, updateMyAppointment } from "./apis";
 
 export const useAppointment = () =>
   useQuery({
@@ -29,4 +29,10 @@ export const useDeleteAppointment = () =>
   useMutation({
     mutationFn: deleteAppointment,
     mutationKey: ["delete-appointment"],
+  });
+
+export const useAssignVetToAppointment = () =>
+  useMutation({
+    mutationFn: assignVetToAppointment,
+    mutationKey: ["assign-vet-appointment"],
   });

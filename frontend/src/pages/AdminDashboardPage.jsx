@@ -66,9 +66,14 @@ export const AdminDashboardPage = () => {
   const adoptionPets = adoptionResponse?.data?.pets ?? [];
 
   const pendingAppointments = appointments.filter((item) => ["pending", "confirmed"].includes(item.status));
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const upcomingAppointments = pendingAppointments.filter(
+    (item) => new Date(item.appointmentTime) >= todayStart
+  );
   const pendingRequests = adoptionRequests.filter((item) => item.status === "pending");
   const recentUsers = users.slice(0, 4);
-  const todayAppointments = pendingAppointments.slice(0, 4);
+  const todayAppointments = upcomingAppointments.slice(0, 4);
 
   const statCards = [
     {

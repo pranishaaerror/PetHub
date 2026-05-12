@@ -80,7 +80,7 @@ export const CommunityConversationPage = () => {
     <div className="pet-page">
       <section className="grid gap-6 xl:grid-cols-[0.94fr_1.06fr]">
         <div className="pet-card overflow-hidden bg-[linear-gradient(140deg,#2D2D2D,#5A4632)] p-6 text-white md:p-8">
-          <Link to="/community" className="pet-button-secondary gap-2 bg-white/92">
+          <Link to="/dashboard/community" className="pet-button-secondary gap-2 bg-white/92">
             <ArrowLeft className="h-4 w-4 text-[#F5A623]" />
             Back to community
           </Link>

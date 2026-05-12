@@ -38,6 +38,10 @@ import { ProviderDashboardPage } from "./pages/provider/ProviderDashboardPage";
 import { ProviderBookingsPage } from "./pages/provider/ProviderBookingsPage";
 import { ProviderPaymentsPage } from "./pages/provider/ProviderPaymentsPage";
 import { ProviderProfilePage } from "./pages/provider/ProviderProfilePage";
+import { AdoptionHistoryPage } from "./pages/history/AdoptionHistoryPage";
+import { PaymentHistoryPage } from "./pages/history/PaymentHistoryPage";
+import { CommunityHistoryPage } from "./pages/history/CommunityHistoryPage";
+import Community from "./pages/main/Community";
 
 function App() {
   return (
@@ -47,6 +51,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/service-booking" element={<ServiceBooking/>} />
         <Route path="/adoption" element={<Adoption/>} />
+        <Route path="/community" element={<Community />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -115,6 +120,9 @@ function App() {
           <Route path="services" element={<ServiceBookingPage />} />
           <Route path="medical-records" element={<MedicalRecordsPage />} />
           <Route path="medical-records/upload" element={<MedicalUploadPage />} />
+          <Route path="history/adoption" element={<AdoptionHistoryPage />} />
+          <Route path="history/payments" element={<PaymentHistoryPage />} />
+          <Route path="history/community" element={<CommunityHistoryPage />} />
           <Route path="dashboard/service-booking" element={<Navigate to="/services" replace />} />
           <Route path="dashboard/adoption" element={<AdoptionGalleryPage />} />
           <Route path="dashboard/adoption/:petId" element={<AdoptionPetDetailPage />} />
@@ -123,7 +131,7 @@ function App() {
           <Route path="notifications" element={<NotificationsPage />} />
         </Route>
         <Route element={<MainLayout />}>
-          <Route path="community" element={<CommunityPage />} />
+          <Route path="dashboard/community" element={<CommunityPage />} />
           <Route path="community/meetups/:slug" element={<CommunityMeetupPage />} />
           <Route path="community/conversations/:mode" element={<CommunityConversationPage />} />
           <Route path="community/conversations/:mode/:slug" element={<CommunityConversationPage />} />

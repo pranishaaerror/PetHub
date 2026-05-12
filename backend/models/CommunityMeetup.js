@@ -27,6 +27,11 @@ const communityMeetupSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    eventDate: {
+      type: Date,
+      default: null,
+      index: true,
+    },
     location: {
       type: String,
       required: true,

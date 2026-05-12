@@ -41,7 +41,7 @@ export const CommunityMeetupPage = () => {
           <p className="mt-3 text-sm leading-7 text-[#6B6B6B]">
             This meetup card is unavailable right now.
           </p>
-          <Link to="/community" className="pet-button-primary mt-6 gap-2">
+          <Link to="/dashboard/community" className="pet-button-primary mt-6 gap-2">
             <ArrowLeft className="h-4 w-4" />
             Back to community
           </Link>
@@ -82,7 +82,7 @@ export const CommunityMeetupPage = () => {
     <div className="pet-page">
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <div className="pet-card overflow-hidden bg-[linear-gradient(140deg,#2D2D2D,#5A4632)] p-6 text-white md:p-8">
-          <Link to="/community" className="pet-button-secondary gap-2 bg-white/92">
+          <Link to="/dashboard/community" className="pet-button-secondary gap-2 bg-white/92">
             <ArrowLeft className="h-4 w-4 text-[#F5A623]" />
             Back to community
           </Link>

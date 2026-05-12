@@ -31,8 +31,22 @@ const energyColor = {
 };
 
 const EMPTY_FORM = {
-  title: "", description: "", type: "meetup", date: "", time: "",
+  title: "", description: "", type: "meetup", date: "", time: "", rawDate: "", rawTime: "",
   location: "", hostName: "", tags: "", energyStyle: "gentle",
+};
+
+const formatDateDisplay = (isoDate) => {
+  if (!isoDate) return "";
+  const d = new Date(`${isoDate}T00:00:00`);
+  return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+};
+
+const formatTimeDisplay = (time24) => {
+  if (!time24) return "";
+  const [h, m] = time24.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, "0")} ${ampm}`;
 };
 
 const Field = ({ label, required, children }) => (
@@ -47,19 +61,27 @@ const Field = ({ label, required, children }) => (
 const inputCls = "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition bg-white";
 
 function MeetupModal({ initial, onClose, onSave, isSaving }) {
-  const [form, setForm] = useState(initial ?? EMPTY_FORM);
+  const [form, setForm] = useState(() => {
+    if (!initial) return EMPTY_FORM;
+    // When editing, keep rawDate/rawTime empty (admin re-picks) or try to parse
+    return { ...EMPTY_FORM, ...initial, rawDate: initial.rawDate ?? "", rawTime: initial.rawTime ?? "" };
+  });
   const isEdit = !!initial;
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const { title, description, type, date, time, location, hostName } = form;
-    if (!title || !description || !type || !date || !time || !location || !hostName) {
+    const { title, description, type, rawDate, rawTime, location, hostName } = form;
+    if (!title || !description || !type || !rawDate || !rawTime || !location || !hostName) {
       toast.error("Please fill in all required fields.");
       return;
     }
     onSave({
       ...form,
+      date: formatDateDisplay(rawDate),
+      time: formatTimeDisplay(rawTime),
+      rawDate,
+      rawTime,
       tags: form.tags ? form.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
     });
   };
@@ -132,18 +154,19 @@ function MeetupModal({ initial, onClose, onSave, isSaving }) {
           <div className="grid grid-cols-2 gap-3">
             <Field label="Date" required>
               <input
-                value={form.date}
-                onChange={(e) => set("date", e.target.value)}
+                type="date"
+                value={form.rawDate}
+                onChange={(e) => set("rawDate", e.target.value)}
+                min={new Date().toISOString().slice(0, 10)}
                 className={inputCls}
-                placeholder="Sunday, April 6"
               />
             </Field>
             <Field label="Time" required>
               <input
-                value={form.time}
-                onChange={(e) => set("time", e.target.value)}
+                type="time"
+                value={form.rawTime}
+                onChange={(e) => set("rawTime", e.target.value)}
                 className={inputCls}
-                placeholder="11:00 AM"
               />
             </Field>
           </div>
@@ -153,7 +176,6 @@ function MeetupModal({ initial, onClose, onSave, isSaving }) {
               value={form.location}
               onChange={(e) => set("location", e.target.value)}
               className={inputCls}
-              placeholder="Patan Garden Courts"
             />
           </Field>
 
@@ -162,7 +184,6 @@ function MeetupModal({ initial, onClose, onSave, isSaving }) {
               value={form.hostName}
               onChange={(e) => set("hostName", e.target.value)}
               className={inputCls}
-              placeholder="PetHub Community Desk"
             />
           </Field>
 

@@ -3,21 +3,25 @@ import Footer from '../Footer'
 import Header from '../Header'
 import { listAdoption } from '../../apis/adoption/apis';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, ArrowRight, Sparkles, Shield, Clock, Star } from 'lucide-react';
+import { Heart, ArrowRight, Sparkles, Shield, Clock, Star, X, MapPin } from 'lucide-react';
 
 const Adoption = () => {
   const navigate = useNavigate();
-  const [adoptionPets, setAdoptionPets] = useState([]);
+  const [allPets, setAllPets] = useState([]);
+  const [selectedPet, setSelectedPet] = useState(null);
 
   useEffect(() => {
     listAdoption()
       .then((res) => {
-        setAdoptionPets(res.data?.pets);
+        setAllPets(res.data?.pets ?? []);
       })
       .catch((err) => {
         console.error(err);
       });
   }, []);
+
+  // Cards only show non-adopted pets
+  const adoptionPets = allPets.filter((p) => p.status !== "Adopted");
 
   const handleAdoption = (petId) => {
     const token = localStorage.getItem("userToken");
@@ -39,6 +43,82 @@ const Adoption = () => {
 
   return (
     <div className="min-h-screen bg-[#F4EAD9] px-2 py-2 text-[#2D2D2D] sm:px-3 sm:py-3 md:px-4 md:py-4">
+
+      {/* Pet profile popup */}
+      {selectedPet && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setSelectedPet(null); }}
+        >
+          <div className="relative w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <button
+              onClick={() => setSelectedPet(null)}
+              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-gray-500 shadow hover:bg-gray-100"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            {/* Image */}
+            <div className="h-56 overflow-hidden bg-[#FFF3E0]">
+              {selectedPet.imageGallery?.[0] && !selectedPet.imageGallery[0].endsWith("/photo") ? (
+                <img
+                  src={selectedPet.imageGallery[0].startsWith("http") ? selectedPet.imageGallery[0] : `${import.meta.env.VITE_BACKEND_URL?.replace("/api", "") || "http://localhost:5000"}${selectedPet.imageGallery[0]}`}
+                  alt={selectedPet.petName}
+                  className="h-full w-full object-cover object-top"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-6xl">🐕</div>
+              )}
+            </div>
+
+            {/* Info */}
+            <div className="p-5 space-y-4">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h2 className="text-2xl font-bold text-[#1A1A1A]">{selectedPet.petName}</h2>
+                  <p className="text-sm text-[#9B8A78]">{selectedPet.breed}</p>
+                  {selectedPet.location && (
+                    <div className="mt-1 flex items-center gap-1 text-xs text-[#9B9B9B]">
+                      <MapPin className="h-3 w-3 text-amber-500" />
+                      {selectedPet.location}
+                    </div>
+                  )}
+                </div>
+                <span className="rounded-full bg-[#FFF0D6] px-3 py-1 text-xs font-semibold text-amber-700">
+                  {ageLabel(selectedPet.age)}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {[selectedPet.gender, selectedPet.size, selectedPet.status].filter(Boolean).map((tag) => (
+                  <span key={tag} className="rounded-full bg-[#F0F0F0] px-3 py-1 text-xs font-semibold text-[#5B5B5B]">{tag}</span>
+                ))}
+                {selectedPet.vaccinated && (
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">✓ Vaccinated</span>
+                )}
+              </div>
+
+              {selectedPet.description && (
+                <p className="text-sm leading-relaxed text-[#6B6B6B] line-clamp-3">{selectedPet.description}</p>
+              )}
+
+              {selectedPet.healthStatus && (
+                <div className="rounded-xl bg-[#FFF8EE] px-4 py-2.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-600">Health</p>
+                  <p className="mt-0.5 text-sm font-semibold text-[#1A1A1A]">{selectedPet.healthStatus}</p>
+                </div>
+              )}
+
+              <button
+                className="adopt-btn w-full justify-center"
+                onClick={() => { setSelectedPet(null); handleAdoption(selectedPet._id); }}
+              >
+                Adopt <Heart className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <style>{`
         .adopt-root { font-family: inherit; }
         .adopt-serif { font-family: inherit; }
@@ -59,12 +139,15 @@ const Adoption = () => {
         .pet-img-wrap {
           position: relative;
           overflow: hidden;
-          height: 220px;
+          height: 260px;
+          border-radius: 20px 20px 0 0;
         }
         .pet-img-wrap img, .pet-img-wrap .pet-emoji-bg {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          object-position: center top;
+          display: block;
           transition: transform 0.6s ease;
         }
         .pet-card:hover .pet-img-wrap img { transform: scale(1.06); }
@@ -187,18 +270,18 @@ const Adoption = () => {
 
             <div className="fade-up fade-up-4 mt-10 flex flex-wrap gap-4">
               <div className="hero-stat text-center">
-                <p className="adopt-serif text-3xl font-700 text-amber-400">{adoptionPets.length}+</p>
+                <p className="adopt-serif text-3xl font-700 text-amber-400">{allPets.filter(p => p.status === 'Available').length}+</p>
                 <p className="mt-1 text-xs text-white/50 uppercase tracking-widest">Pets Available</p>
               </div>
               <div className="hero-stat text-center">
                 <p className="adopt-serif text-3xl font-700 text-amber-400">
-                  {adoptionPets.filter(p => p.status === 'Available').length}
+                  {allPets.filter(p => p.status === 'Pending').length}
                 </p>
                 <p className="mt-1 text-xs text-white/50 uppercase tracking-widest">Ready to Adopt</p>
               </div>
               <div className="hero-stat text-center">
                 <p className="adopt-serif text-3xl font-700 text-amber-400">
-                  {adoptionPets.filter(p => p.status === 'Adopted').length}
+                  {allPets.filter(p => p.status === 'Adopted').length}
                 </p>
                 <p className="mt-1 text-xs text-white/50 uppercase tracking-widest">Found Homes</p>
               </div>
@@ -252,8 +335,15 @@ const Adoption = () => {
                 >
                   {/* Image */}
                   <div className="pet-img-wrap">
-                    {pet.imageGallery?.[0] ? (
-                      <img src={pet.imageGallery[0]} alt={pet.petName} />
+                    {pet.imageGallery?.[0] && !pet.imageGallery[0].endsWith("/photo") ? (
+                      <img
+                        src={
+                          pet.imageGallery[0].startsWith("http")
+                            ? pet.imageGallery[0]
+                            : `${import.meta.env.VITE_BACKEND_URL?.replace("/api", "") || "http://localhost:5000"}${pet.imageGallery[0]}`
+                        }
+                        alt={pet.petName}
+                      />
                     ) : (
                       <div
                         className="pet-emoji-bg flex items-center justify-center text-6xl"
@@ -264,11 +354,6 @@ const Adoption = () => {
                     )}
 
                     {/* Overlay badges */}
-                    <div className="absolute left-3 top-3">
-                      <span className="badge" style={{ background: "rgba(0,0,0,0.55)", color: "#fff" }}>
-                        {pet.species || "Dog"}
-                      </span>
-                    </div>
                     <div className="absolute bottom-3 left-3 right-3">
                       <span
                         className="badge w-full justify-center"
@@ -309,9 +394,12 @@ const Adoption = () => {
                     </div>
 
                     <div className="mt-4 flex gap-2">
-                      <Link to={`/dashboard/adoption/${pet._id}`} className="profile-btn flex-1 justify-center">
+                      <button
+                        className="profile-btn flex-1 justify-center"
+                        onClick={() => setSelectedPet(pet)}
+                      >
                         Profile
-                      </Link>
+                      </button>
                       <button
                         className="adopt-btn flex-1 justify-center"
                         onClick={() => handleAdoption(pet._id)}

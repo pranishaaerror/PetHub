@@ -211,6 +211,35 @@ router.patch("/vet/appointments/:id/consultation", verifyToken, requireRole("vet
 
     await apt.save();
 
+    // Auto-create or update a MedicalRecord so it appears in the user's medical history
+    const petId = apt.petId?._id ?? apt.petId;
+    const ownerId = apt.userId?._id ?? apt.userId;
+    if (petId && ownerId && (apt.diagnosis || apt.consultationNotes)) {
+      const title = apt.serviceId?.serviceName
+        ? `${apt.serviceId.serviceName} — Consultation`
+        : "Vet Consultation";
+      const description = [
+        apt.diagnosis ? `Diagnosis: ${apt.diagnosis}` : "",
+        apt.consultationNotes ? `Notes: ${apt.consultationNotes}` : "",
+      ].filter(Boolean).join("\n");
+
+      // Upsert: one record per appointment
+      await MedicalRecord.findOneAndUpdate(
+        { appointmentId: apt._id },
+        {
+          userId: ownerId,
+          petId,
+          veterinarianId: req.dbUser._id,
+          appointmentId: apt._id,
+          type: "consultation",
+          title,
+          description,
+          date: apt.appointmentTime ?? new Date(),
+        },
+        { upsert: true, new: true, runValidators: true }
+      );
+    }
+
     const updated = await loadAppointment(apt._id);
     res.json(updated);
   } catch (error) {
@@ -249,6 +278,31 @@ router.post(
 
       apt.medicalReportUrl = `/uploads/medical/${req.file.filename}`;
       await apt.save();
+
+      // Also attach the report URL to the MedicalRecord for this appointment
+      const petId = apt.petId?._id ?? apt.petId;
+      const ownerId = apt.userId?._id ?? apt.userId;
+      if (petId && ownerId) {
+        const title = apt.serviceId?.serviceName
+          ? `${apt.serviceId.serviceName} — Report`
+          : "Medical Report";
+        await MedicalRecord.findOneAndUpdate(
+          { appointmentId: apt._id },
+          {
+            $set: {
+              userId: ownerId,
+              petId,
+              veterinarianId: req.dbUser._id,
+              appointmentId: apt._id,
+              type: "consultation",
+              title,
+              date: apt.appointmentTime ?? new Date(),
+              documentUrl: apt.medicalReportUrl,
+            },
+          },
+          { upsert: true, new: true, runValidators: true }
+        );
+      }
 
       const updated = await loadAppointment(apt._id);
       res.json(updated);

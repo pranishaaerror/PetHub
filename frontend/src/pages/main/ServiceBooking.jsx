@@ -35,7 +35,7 @@ const ServiceBooking = () => {
     <div className="mx-auto max-w-[1500px] rounded-[36px] bg-white/60 shadow-[0_28px_80px_rgba(45,45,45,0.09)] backdrop-blur-xl">
         <Header />
         <div className="bg-[#FAF6F0] text-[#1C1917]">
-            <section className="bg-[#2C2520] px-4 md:px-6 lg:px-7 py-20">
+            <section className="bg-[#2C2520] px-6 md:px-12 lg:px-16 py-20">
                 <div className="pet-rise-in">
                     <div className="text-[11px] font-semibold tracking-[2px] uppercase text-[#E8920A] mb-3">
                         Premium Services
@@ -50,7 +50,7 @@ const ServiceBooking = () => {
                     </p>
                 </div>
             </section>
-                    <div className=" px-4 md:px-6 lg:px-7 py-20">
+                    <div className=" px-6 md:px-12 lg:px-16 py-20">
 
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
                             {services.map((service) => (

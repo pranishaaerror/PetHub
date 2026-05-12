@@ -6,8 +6,11 @@ import {
   CalendarDays,
   CheckCheck,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
+  ClipboardList,
   HeartHandshake,
+  History,
   Info,
   LayoutDashboard,
   LogOut,
@@ -19,6 +22,7 @@ import {
   UserCircle,
   Users,
   UsersRound,
+  WalletCards,
   X,
 } from "lucide-react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -170,6 +174,11 @@ function NotificationDropdown({ onClose }) {
 export const MainLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const p = window.location.pathname;
+    return p.startsWith("/medical-records") || p.startsWith("/history/");
+  });
   const notifRef = useRef(null);
   const { userProfile, currentUser } = useAuth();
   const { data: notificationsResponse } = useNotifications({ enabled: !!currentUser });
@@ -218,7 +227,7 @@ export const MainLayout = () => {
       { icon: PawPrint, label: "Pet Profile", url: "/pet-profile" },
       { icon: CalendarDays, label: "Appointments", url: "/appointments" },
       { icon: Scissors, label: "Services", url: "/services" },
-      { icon: UsersRound, label: "Community", url: "/community" },
+      { icon: UsersRound, label: "Community", url: "/dashboard/community" },
       { icon: HeartHandshake, label: "Adoption", url: "/dashboard/adoption" },
       { icon: UserCircle, label: "Profile", url: "/profile" },
     ];
@@ -252,7 +261,7 @@ export const MainLayout = () => {
     notificationsResponse?.data?.filter((notification) => !notification.isRead).length ?? 0;
 
   const isCommunityArea =
-    location.pathname === "/community" || location.pathname.startsWith("/community/");
+    location.pathname === "/dashboard/community" || location.pathname.startsWith("/dashboard/community/");
 
   // Sidebar should be hidden on desktop (md:hidden) only for non‑logged‑in users on community pages
   const hideSidebarOnCommunityDesktop = isCommunityArea && !currentUser;
@@ -324,7 +333,59 @@ export const MainLayout = () => {
                   <ChevronRight className="h-4 w-4 opacity-60 transition-transform group-hover:translate-x-0.5" />
                 </NavLink>
               ))}
-              
+
+              {/* History dropdown — only for regular users */}
+              {userProfile?.role === "user" || !userProfile?.role ? (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setHistoryOpen((o) => !o)}
+                    className={`group flex w-full items-center justify-between rounded-[22px] px-4 py-3.5 text-sm font-semibold transition-all ${
+                      location.pathname.startsWith("/medical-records")
+                        ? "bg-[linear-gradient(135deg,#F5A623,#FFB347)] text-white shadow-[0_20px_40px_rgba(245,166,35,0.24)]"
+                        : "bg-transparent text-[#5F5A53] hover:bg-[#FFF4E2] hover:text-[#2D2D2D]"
+                    }`}
+                  >
+                    <span className="flex items-center gap-3">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-white/35">
+                        <History className="h-5 w-5" />
+                      </span>
+                      History
+                    </span>
+                    <ChevronDown
+                      className={`h-4 w-4 opacity-60 transition-transform duration-200 ${historyOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {/* Submenu */}
+                  {historyOpen && (
+                    <div className="ml-4 mt-1 space-y-1 border-l-2 border-[#F5A623]/30 pl-3">
+                      {[
+                        { to: "/medical-records",    icon: ClipboardList,  label: "Medical Records"  },
+                        { to: "/history/payments",   icon: WalletCards,    label: "Payment History"  },
+                      ].map(({ to, icon: Icon, label }) => (
+                        <NavLink
+                          key={to}
+                          to={to}
+                          onClick={() => setSidebarOpen(false)}
+                          className={({ isActive }) =>
+                            `flex items-center gap-3 rounded-[18px] px-3 py-2.5 text-sm font-semibold transition-all ${
+                              isActive
+                                ? "bg-[#FFF0D6] text-[#C77E1D]"
+                                : "text-[#5F5A53] hover:bg-[#FFF4E2] hover:text-[#2D2D2D]"
+                            }`
+                          }
+                        >
+                          <span className="flex h-8 w-8 items-center justify-center rounded-[12px] bg-[#FFF0D6]">
+                            <Icon className="h-4 w-4 text-[#F5A623]" />
+                          </span>
+                          {label}
+                        </NavLink>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : null}
             </nav>
             {currentUser ? (
                   <Link

@@ -18,10 +18,17 @@ router.get("/posts", async (_req, res) => {
 router.get("/meetups", async (req, res) => {
   try {
     const approvedOnly = req.query.approvedOnly === "true" || req.query.approvedOnly === "1";
-    const filter = approvedOnly
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Filter: only show events from today onwards (or those without an eventDate for backwards compat)
+    const dateFilter = { $or: [{ eventDate: { $gte: today } }, { eventDate: null }] };
+    const approvedFilter = approvedOnly
       ? { $or: [{ approved: true }, { approved: { $exists: false } }] }
       : {};
-    const meetups = await CommunityMeetup.find(filter).sort({ createdAt: -1 });
+
+    const filter = { ...dateFilter, ...approvedFilter };
+    const meetups = await CommunityMeetup.find(filter).sort({ eventDate: 1, createdAt: -1 });
     res.json(meetups);
   } catch (error) {
     res.status(500).json({ message: error.message || "Server error" });
@@ -84,10 +91,15 @@ router.patch("/meetups/:meetupId", verifyToken, async (req, res) => {
       return res.status(403).json({ message: "Only admins can update meetups." });
     }
 
-    const allowed = ["title", "description", "type", "date", "time", "location", "hostName", "tags", "energyStyle", "approved"];
+    const allowed = ["title", "description", "type", "date", "time", "location", "hostName", "tags", "energyStyle", "approved", "rawDate"];
     const update = {};
     for (const key of allowed) {
-      if (req.body[key] !== undefined) update[key] = req.body[key];
+      if (req.body[key] !== undefined) {
+        if (key !== "rawDate") update[key] = req.body[key];
+      }
+    }
+    if (req.body.rawDate) {
+      update.eventDate = new Date(`${req.body.rawDate}T00:00:00`);
     }
 
     const meetup = await CommunityMeetup.findByIdAndUpdate(
@@ -108,16 +120,19 @@ router.post("/meetups", verifyToken, async (req, res) => {
       return res.status(403).json({ message: "Only admins can create meetups." });
     }
 
-    const { title, description, type, date, time, location, hostName, tags, energyStyle } = req.body;
+    const { title, description, type, date, time, location, hostName, tags, energyStyle, rawDate } = req.body;
     if (!title || !description || !type || !date || !time || !location || !hostName) {
       return res.status(400).json({ message: "All required fields must be provided." });
     }
+
+    const eventDate = rawDate ? new Date(`${rawDate}T00:00:00`) : null;
 
     const meetup = await CommunityMeetup.create({
       title, description, type, date, time, location, hostName,
       tags: tags ?? [],
       energyStyle: energyStyle ?? "gentle",
       approved: true,
+      eventDate,
     });
     res.status(201).json(meetup);
   } catch (error) {

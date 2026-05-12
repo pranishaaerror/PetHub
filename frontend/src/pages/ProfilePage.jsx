@@ -3,15 +3,12 @@ import { Link } from "react-router-dom";
 import {
   ArrowUpRight,
   CalendarDays,
-  CheckCircle2,
-  Clock3,
   HeartHandshake,
   PawPrint,
   Phone,
   Save,
   Shield,
   UserRound,
-  XCircle,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -20,8 +17,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { EmptyState } from "../components/EmptyState";
 import { PetHubLoader } from "../components/PetHubLoader";
-import { useMyAdoptionRequests } from "../apis/adoptionRequests/hooks";
-import { useAppointment } from "../apis/appointment/hooks";
 import { useCurrentUser, useUpdateCurrentUser } from "../apis/users/hooks";
 import { useMyPets } from "../apis/pets/hooks";
 
@@ -32,83 +27,15 @@ const ownerSchema = z.object({
 });
 
 /* ── small helpers ───────────────────────────────────────────────────────── */
-const appointmentStatusMeta = {
-  confirmed: { icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50",  label: "Confirmed" },
-  pending:   { icon: Clock3,       color: "text-amber-500",   bg: "bg-amber-50",    label: "Pending"   },
-  cancelled: { icon: XCircle,      color: "text-rose-400",    bg: "bg-rose-50",     label: "Cancelled" },
-  completed: { icon: CheckCircle2, color: "text-sky-500",     bg: "bg-sky-50",      label: "Completed" },
-};
-
-const adoptionStatusMeta = {
-  pending:   { color: "text-amber-600",   bg: "bg-amber-50",   border: "border-amber-200",  label: "Pending"  },
-  approved:  { color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200", label: "Approved" },
-  rejected:  { color: "text-stone-500",   bg: "bg-stone-100",  border: "border-stone-200",   label: "Closed"   },
-  cancelled: { color: "text-stone-500",   bg: "bg-stone-100",  border: "border-stone-200",   label: "Cancelled"},
-};
-
-const AppointmentRow = ({ appointment }) => {
-  const key = appointment.status?.toLowerCase();
-  const meta = appointmentStatusMeta[key] ?? appointmentStatusMeta.pending;
-  const StatusIcon = meta.icon;
-
-  return (
-    <div className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-[0_2px_10px_rgba(45,45,45,0.05)]">
-      <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${meta.bg}`}>
-        <StatusIcon className={`h-4 w-4 ${meta.color}`} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-[#2D2D2D]">
-          {appointment.petName} · {appointment.serviceId?.serviceName || "Service"}
-        </p>
-        <div className="mt-1 flex items-center gap-1.5 text-xs text-[#9A8A6A]">
-          <CalendarDays className="h-3 w-3 shrink-0" />
-          {new Date(appointment.appointmentTime).toLocaleString()}
-        </div>
-      </div>
-      <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${meta.bg} ${meta.color}`}>
-        {meta.label}
-      </span>
-    </div>
-  );
-};
-
-const AdoptionRow = ({ request }) => {
-  const key = request.status?.toLowerCase();
-  const meta = adoptionStatusMeta[key] ?? adoptionStatusMeta.pending;
-
-  return (
-    <div className={`flex items-start gap-3 rounded-2xl border p-4 ${meta.bg} ${meta.border}`}>
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/70">
-        <HeartHandshake className={`h-4 w-4 ${meta.color}`} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-[#2D2D2D]">
-          {request.petId?.petName || "Adoption profile"}
-        </p>
-        <p className="mt-1 line-clamp-1 text-xs text-[#9A8A6A]">
-          {request.message || "Your request is on file in PetHub."}
-        </p>
-      </div>
-      <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${meta.color}`}>
-        {meta.label}
-      </span>
-    </div>
-  );
-};
-
 /* ── page ─────────────────────────────────────────────────────────────────── */
 export const ProfilePage = () => {
   const queryClient = useQueryClient();
-  const { data: userResponse, isLoading: isUserLoading }   = useCurrentUser();
-  const { data: petsResponse, isLoading: isPetsLoading }   = useMyPets();
-  const { data: appointmentsResponse }                     = useAppointment();
-  const { data: adoptionRequestsResponse }                 = useMyAdoptionRequests();
+  const { data: userResponse, isLoading: isUserLoading } = useCurrentUser();
+  const { data: petsResponse, isLoading: isPetsLoading } = useMyPets();
   const { mutateAsync: updateCurrentUser, isPending: isSavingUser } = useUpdateCurrentUser();
 
-  const user                 = userResponse?.data;
-  const primaryPet           = petsResponse?.data?.primaryPet ?? petsResponse?.data?.pets?.[0] ?? null;
-  const recentAppointments   = (appointmentsResponse?.data ?? []).slice(0, 5);
-  const recentAdoptionReqs   = (adoptionRequestsResponse?.data ?? []).slice(0, 3);
+  const user       = userResponse?.data;
+  const primaryPet = petsResponse?.data?.primaryPet ?? petsResponse?.data?.pets?.[0] ?? null;
 
   const ownerForm = useForm({
     resolver: zodResolver(ownerSchema),
@@ -362,81 +289,6 @@ export const ProfilePage = () => {
         </div>
       </section>
 
-      {/* ── BOOKINGS + ADOPTION ──────────────────────────────────────── */}
-      <section className="rounded-[28px] bg-white p-6 shadow-[0_6px_28px_rgba(45,45,45,0.07)] md:p-8">
-        <div className="mb-5 flex items-center gap-2">
-          <CalendarDays className="h-5 w-5 text-[#F5A623]" />
-          <h2 className="text-xl font-bold text-[#2D2D2D]">Booking history</h2>
-        </div>
-
-        <div className="grid gap-5 lg:grid-cols-2">
-
-          {/* appointments */}
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-widest text-[#B78331]">
-                Appointments
-              </p>
-              <Link
-                to="/appointments"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-[#F5A623] hover:underline"
-              >
-                View all <ArrowUpRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-
-            <div className="space-y-2.5">
-              {recentAppointments.length ? (
-                recentAppointments.map((a) => <AppointmentRow key={a._id} appointment={a} />)
-              ) : (
-                <div className="flex flex-col items-center gap-3 rounded-2xl bg-[#FAF6EF] py-8 text-center">
-                  <CalendarDays className="h-8 w-8 text-[#F5C978]" />
-                  <div>
-                    <p className="text-sm font-semibold text-[#2D2D2D]">No bookings yet</p>
-                    <p className="mt-1 text-xs text-[#9A8A6A]">
-                      <Link to="/services" className="font-semibold text-[#F5A623] hover:underline">
-                        Book a service
-                      </Link>{" "}
-                      to get started.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* adoption requests */}
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-widest text-[#B78331]">
-                Adoption requests
-              </p>
-              <Link
-                to="/dashboard/adoption"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-[#F5A623] hover:underline"
-              >
-                Gallery <ArrowUpRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-
-            <div className="space-y-2.5">
-              {recentAdoptionReqs.length ? (
-                recentAdoptionReqs.map((r) => <AdoptionRow key={r._id} request={r} />)
-              ) : (
-                <div className="flex flex-col items-center gap-3 rounded-2xl bg-[#FAF6EF] py-8 text-center">
-                  <HeartHandshake className="h-8 w-8 text-[#F5C978]" />
-                  <div>
-                    <p className="text-sm font-semibold text-[#2D2D2D]">No requests yet</p>
-                    <p className="mt-1 text-xs text-[#9A8A6A]">
-                      Admin decisions will appear here.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 };

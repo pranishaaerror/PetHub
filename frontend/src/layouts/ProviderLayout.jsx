@@ -56,7 +56,7 @@ export const ProviderLayout = ({ portal }) => {
         <aside
           className={`${
             sidebarOpen ? "translate-x-0" : "-translate-x-[120%]"
-          } fixed inset-y-2 left-2 z-40 w-[280px] rounded-[30px] bg-white/90 p-5 shadow-[0_25px_80px_rgba(45,45,45,0.08)] backdrop-blur-xl transition-transform duration-300 md:static md:translate-x-0`}
+          } fixed inset-y-2 left-2 z-40 w-[280px] rounded-[30px] bg-white/90 py-5 pl-5 shadow-[0_25px_80px_rgba(45,45,45,0.08)] backdrop-blur-xl transition-transform duration-300 md:translate-x-0`}
         >
           <div className="flex h-full flex-col gap-6">
             <div className="flex items-center justify-between">
@@ -78,7 +78,7 @@ export const ProviderLayout = ({ portal }) => {
               </Button>
             </div>
 
-            <nav className="flex flex-1 flex-col gap-2">
+            <nav className="flex flex-1 flex-col gap-2 overflow-y-auto scrollbar-thin scrollbar-thumb-[#F5A623]/60 pr-5">
               {navItems.map((item) => (
                 <NavLink
                   key={item.to}
@@ -89,7 +89,7 @@ export const ProviderLayout = ({ portal }) => {
                     `group flex items-center justify-between rounded-[22px] px-4 py-3.5 text-sm font-semibold transition-all ${
                       isActive
                         ? "bg-[linear-gradient(135deg,#F5A623,#FFB347)] text-white shadow-[0_20px_40px_rgba(245,166,35,0.24)]"
-                        : "bg-transparent text-[#5F5A53] hover:bg-[#FFF4E2] hover:text-[#2D2D2D]"
+                        : "text-[#5F5A53] hover:bg-[#FFF4E2] hover:text-[#2D2D2D]"
                     }`
                   }
                 >
@@ -107,7 +107,7 @@ export const ProviderLayout = ({ portal }) => {
             {currentUser ? (
               <Link
                 to="/logout"
-                className="flex items-center justify-between rounded-[22px] bg-white px-4 py-3.5 text-sm font-semibold text-[#D36A45] shadow-[0_15px_30px_rgba(45,45,45,0.04)] transition-transform hover:-translate-y-0.5"
+                className="flex items-center justify-between rounded-[22px] bg-white px-4 py-3.5 mr-5 text-sm font-semibold text-[#D36A45] shadow-[0_15px_30px_rgba(45,45,45,0.04)] transition-transform hover:-translate-y-0.5"
               >
                 <span className="flex items-center gap-3">
                   <span className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-[#FFF3EA]">
@@ -129,7 +129,7 @@ export const ProviderLayout = ({ portal }) => {
           />
         ) : null}
 
-        <main className="relative flex min-h-screen min-w-0 flex-1 flex-col">
+        <main className="relative flex h-full min-w-0 flex-1 flex-col overflow-y-auto md:ml-[300px]">
           <header className="glass-surface sticky top-2 z-20 flex items-center justify-between rounded-[28px] px-4 py-4 shadow-[0_20px_60px_rgba(45,45,45,0.08)] md:px-6">
             <div className="flex items-center gap-3">
               <Button

@@ -125,7 +125,7 @@ function PetModal({ initial, onClose, onSave, isSaving, onPhotoUpload, isUploadi
                   <p className="text-xs font-semibold text-[#B78331]">
                     {isUploadingPhoto ? "Uploading…" : "Click to upload photo"}
                   </p>
-                  <p className="text-[11px] text-gray-400">JPG, PNG or WEBP · max 5MB</p>
+                  <p className="text-[11px] text-gray-400">JPG, PNG or WEBP · max 15MB</p>
                 </>
               )}
               <input
@@ -254,12 +254,12 @@ function PetCard({ pet, onEdit, onDelete }) {
     <div className="group flex flex-col rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden">
 
       {/* Hero */}
-      <div className="relative flex items-center justify-center bg-gradient-to-br from-[#FFF5E0] to-[#FFE9A8] h-36">
-        {pet.imageGallery?.[0] ? (
+      <div className="relative flex items-center justify-center bg-gradient-to-br from-[#FFF5E0] to-[#FFE9A8] h-64 overflow-hidden rounded-t-2xl">
+        {pet.imageGallery?.[0] && !pet.imageGallery[0].endsWith("/photo") ? (
           <img
             src={pet.imageGallery[0].startsWith("http") ? pet.imageGallery[0] : `${import.meta.env.VITE_BACKEND_URL?.replace("/api", "") || "http://localhost:5000"}${pet.imageGallery[0]}`}
             alt={pet.petName}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover object-top"
           />
         ) : (
           <span className="text-6xl">{emoji}</span>
@@ -359,6 +359,8 @@ export const AdminAdoptionPetsPage = () => {
   const availableCount = pets.filter((p) => p.status === "Available").length;
   const pendingCount   = pets.filter((p) => p.status === "Pending").length;
   const adoptedCount   = pets.filter((p) => p.status === "Adopted").length;
+  // Only show non-adopted pets in the grid
+  const visiblePets = pets.filter((p) => p.status !== "Adopted");
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["get-adoption"] });
 
@@ -456,7 +458,7 @@ export const AdminAdoptionPetsPage = () => {
       </div>
 
       {/* ── GRID ── */}
-      {pets.length === 0 ? (
+      {visiblePets.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-amber-200 bg-amber-50/30 py-20 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#FFF0D6] text-3xl">
             🐾
@@ -475,7 +477,7 @@ export const AdminAdoptionPetsPage = () => {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-          {pets.map((pet) => (
+          {visiblePets.map((pet) => (
             <PetCard
               key={pet._id}
               pet={pet}

@@ -5,35 +5,6 @@ import { petPhotoUpload } from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
-// Upload photo for an adoption pet
-router.post("/:id/photo", verifyToken, petPhotoUpload.single("photo"), async (req, res) => {
-  try {
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ message: "Only admins can upload pet photos." });
-    }
-    if (!req.file) {
-      return res.status(400).json({ message: "No photo file provided." });
-    }
-
-    const pet = await Adoption.findById(req.params.id);
-    if (!pet) return res.status(404).json({ message: "Pet not found." });
-
-    const photoUrl = `/uploads/pets/${req.file.filename}`;
-    // Replace first image or add to gallery
-    if (pet.imageGallery.length > 0) {
-      pet.imageGallery[0] = photoUrl;
-    } else {
-      pet.imageGallery.push(photoUrl);
-    }
-    pet.markModified("imageGallery");
-    await pet.save();
-
-    res.json({ message: "Photo uploaded successfully.", photoUrl, pet });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
 router.post("/", verifyToken, async (req, res) => {
   try {
     if (req.user.role !== "admin") {
@@ -142,6 +113,34 @@ router.delete("/:id", verifyToken, async (req, res) => {
     res.status(200).json({ message: "Pet removed from adoption center successfully", pet: deletedPet });
   } catch (err) {
     return res.status(500).json({ message: err.message });
+  }
+});
+
+// Upload photo — registered last so POST / is matched first
+router.post("/:id/photo", verifyToken, petPhotoUpload.single("photo"), async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can upload pet photos." });
+    }
+    if (!req.file) {
+      return res.status(400).json({ message: "No photo file provided." });
+    }
+
+    const pet = await Adoption.findById(req.params.id);
+    if (!pet) return res.status(404).json({ message: "Pet not found." });
+
+    const photoUrl = `/uploads/pets/${req.file.filename}`;
+    if (pet.imageGallery.length > 0) {
+      pet.imageGallery[0] = photoUrl;
+    } else {
+      pet.imageGallery.push(photoUrl);
+    }
+    pet.markModified("imageGallery");
+    await pet.save();
+
+    res.json({ message: "Photo uploaded successfully.", photoUrl, pet });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

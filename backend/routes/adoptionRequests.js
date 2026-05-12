@@ -60,6 +60,10 @@ router.post("/", verifyToken, async (req, res) => {
       lifestyle,
     });
 
+    // Mark pet as Pending when a request is submitted
+    pet.status = "Pending";
+    await pet.save();
+
     await createNotification({
       userId: user._id,
       title: "Adoption request sent",
@@ -114,8 +118,10 @@ router.patch("/:requestId/status", verifyToken, async (req, res) => {
 
     if (request.petId) {
       if (status === "approved") {
-        request.petId.status = "Pending";
+        // Mark pet as Adopted when request is approved
+        request.petId.status = "Adopted";
       } else if (["rejected", "cancelled"].includes(status)) {
+        // Only revert to Available if no other pending/approved requests exist
         const blockingRequests = await AdoptionRequest.countDocuments({
           _id: { $ne: request._id },
           petId: request.petId._id,

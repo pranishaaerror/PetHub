@@ -49,7 +49,7 @@ export const LandingPage = () => {
             <div className="mx-auto max-w-[1500px] rounded-[36px] bg-white/60 shadow-[0_28px_80px_rgba(45,45,45,0.09)] backdrop-blur-xl ">
               
                 <Header />
-                <section className="px-4 md:px-6 lg:px-7 py-20" id="home">
+                <section className=" px-6 py-20 md:px-12 lg:px-16" id="home">
                     <div className="pet-rise-in flex">
                         <div>
                             <span className="pet-chip">🐾 Warm, modern, premium</span>
@@ -77,7 +77,7 @@ export const LandingPage = () => {
                     </div>
                 </section>
 
-                <section className="px-4 md:px-6 lg:px-7 py-20 bg-white" id="features">
+                <section className=" px-6 py-20 md:px-12 lg:px-16 bg-white" id="features">
                     <div className="my-0 mx-auto">
                         <div className="text-[11px] font-semibold uppercase mb-[12px] text-[#E8920A]">Everything in one place</div>
                         <h2 className="text-[38px] font-[800] mb-4">Built for pet parents who care deeply</h2>
@@ -96,7 +96,7 @@ export const LandingPage = () => {
                     </div>
                 </section>
 
-                <section className="px-4 md:px-6 lg:px-7 py-20" id="how-it-works">
+                <section className=" px-6 py-20 md:px-12 lg:px-16" id="how-it-works">
                     <div className="text-[11px] font-semibold uppercase mb-[12px] text-[#E8920A]">How it works</div>
                     <h2 className="text-[38px] font-[800] mb-4">Three steps to a better pet life</h2>
                     <div className="grid grid-cols-3 gap-8 mt-[48px]">

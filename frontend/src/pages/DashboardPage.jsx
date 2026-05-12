@@ -50,7 +50,7 @@ const quickActions = [
     title: "Join the community",
     description: "See meetups, playdates, and soft introductions for pet parents nearby.",
     icon: UsersRound,
-    url: "/community",
+    url: "/dashboard/community",
     accent: "#7B68EE",
   },
 ];
@@ -93,7 +93,7 @@ export const DashboardPage = () => {
   const recordsQuery = useRecordsByPet(primaryPet?._id);
   const records = recordsQuery.data?.data ?? [];
   const services = servicesResponse?.data ?? [];
-  const adoptionPets = adoptionResponse?.data?.pets ?? [];
+  const adoptionPets = (adoptionResponse?.data?.pets ?? []).filter((p) => p.status === "Available");
   const notifications = notificationsResponse?.data ?? [];
   const meetups = meetupsResponse?.data ?? [];
 
@@ -337,7 +337,7 @@ export const DashboardPage = () => {
                       <img
                         src={primaryPet.photoUrl}
                         alt={primaryPet.name}
-                        className="h-64 w-full object-cover"
+                        className="h-64 w-full object-cover object-top"
                       />
                     ) : (
                       <div className="flex h-64 items-center justify-center">
@@ -483,9 +483,9 @@ export const DashboardPage = () => {
               ) : (
                 <EmptyState
                   eyebrow="Records"
-                  title="No medical records yet."
-                  description="Upload vaccinations, lab notes, allergies, or prescriptions."
-                  action={<Link to="/medical-records" className="btn-primary mt-2">Add records</Link>}
+                  title="No vet records yet."
+                  description="Records uploaded by your veterinarian will appear here after your appointment."
+                  action={<Link to="/medical-records" className="btn-primary mt-2">View records</Link>}
                 />
               )}
             </div>
@@ -535,7 +535,7 @@ export const DashboardPage = () => {
                   {featuredMeetup.description}
                 </p>
                 <Link
-                  to="/community"
+                  to="/dashboard/community"
                   className="relative mt-5 inline-flex items-center gap-1.5 text-sm font-600 text-[#FFD48C]"
                 >
                   See details <ArrowUpRight className="h-4 w-4" />

@@ -354,41 +354,23 @@ export const ProviderBookingsPage = () => {
 
   const selected = useMemo(() => rows.find((r) => r._id === selectedId) ?? null, [rows, selectedId]);
 
-  const statusOrder = { pending: 0, confirmed: 1, completed: 2, cancelled: 3 };
+  const statusOrder = {  confirmed: 1, completed: 2, cancelled: 3 };
   const sorted = [...rows].sort((a, b) => (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9));
 
   return (
     <div className="pet-page space-y-6">
 
       {/* Header */}
-      <div className="pet-card p-6 md:p-8">
-        <span className="pet-chip">{isVet ? "Vet overview" : "Groomer overview"}</span>
-        <h1 className="mt-3 text-3xl font-bold text-[#2D2D2D] md:text-4xl">
-          {isVet ? "My assigned appointments" : "My bookings"}
-        </h1>
-        <p className="mt-2 max-w-xl text-sm leading-7 text-[#6B6B6B]">
-          {isVet
-            ? "View appointments assigned to you by the admin. Add diagnosis, treatment notes, and upload reports."
-            : "Manage your grooming bookings and service notes."}
-        </p>
-      </div>
+      
+        
+        <h3 className="mt-3 text-3xl font-bold text-[#2D2D2D]">
+          {isVet ? "My appointments" : "My bookings"}
+        </h3>
+        
+      
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {(["pending", "confirmed", "completed", "cancelled"] ).map((s) => {
-          const cfg = statusConfig[s];
-          const count = rows.filter((r) => r.status === s).length;
-          return (
-            <div key={s} className={`rounded-2xl px-4 py-3 ${cfg.bg}`}>
-              <div className="flex items-center gap-1.5">
-                <cfg.icon className={`h-3.5 w-3.5 ${cfg.color}`} />
-                <p className={`text-xs font-semibold capitalize ${cfg.color}`}>{cfg.label}</p>
-              </div>
-              <p className="mt-1 text-2xl font-bold text-[#2D2D2D]">{count}</p>
-            </div>
-          );
-        })}
-      </div>
+      
 
       {/* Table */}
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -396,7 +378,7 @@ export const ProviderBookingsPage = () => {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                {["When", "Pet & Owner", "Service", "Status", ""].map((h) => (
+                {["When", "Pet & Owner", "Service", "Status", "Actions"].map((h) => (
                   <th key={h} className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">{h}</th>
                 ))}
               </tr>

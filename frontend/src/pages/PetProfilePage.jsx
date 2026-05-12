@@ -230,9 +230,6 @@ export const PetProfilePage = () => {
                 <Stethoscope className="h-4 w-4" />
                 Medical history
               </Link>
-              <Link to="/medical-records/upload" className="pp-btn-secondary">
-                Upload record <ArrowUpRight className="h-4 w-4" />
-              </Link>
             </div>
           </div>
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[#6B6B6B]">

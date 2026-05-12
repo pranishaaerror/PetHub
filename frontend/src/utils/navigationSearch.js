@@ -12,7 +12,7 @@ const routeRules = [
     keywords: ["adopt", "adoption", "pet", "gallery", "foster"],
   },
   {
-    path: "/community",
+    path: "/dashboard/community",
     keywords: ["community", "meetup", "connect", "message", "playdate"],
   },
 ];

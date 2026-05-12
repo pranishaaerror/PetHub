@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState,useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Listbox } from '@headlessui/react';
 import { PawPrint, Plus, Stethoscope, Trash2, X, ChevronDown } from 'lucide-react';
@@ -40,46 +41,81 @@ const paymentTone = {
 
 function StatusDropdown({ value, onChange, disabled }) {
   const config = statusConfig[value] ?? statusConfig.pending;
+  const buttonRef = useRef(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const [open, setOpen] = useState(false);
+
+  const handleOpen = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+      });
+    }
+    setOpen(true);
+  };
+
+  const handleSelect = (status) => {
+    onChange(status);
+    setOpen(false);
+  };
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (buttonRef.current && !buttonRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
   return (
-    <div className="relative">
-      <Listbox value={value} onChange={onChange} disabled={disabled}>
-        <Listbox.Button
-          className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-all hover:opacity-75 disabled:cursor-not-allowed disabled:opacity-50 ${config.badge}`}
+    <>
+      <button
+        ref={buttonRef}
+        onClick={handleOpen}
+        disabled={disabled}
+        className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-all hover:opacity-75 disabled:cursor-not-allowed disabled:opacity-50 ${config.badge}`}
+      >
+        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${config.dot}`} />
+        {config.label}
+        <svg className="w-2.5 h-2.5 opacity-50 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && createPortal(
+        <ul
+          style={{ position: 'absolute', top: pos.top, left: pos.left, zIndex: 9999 }}
+          className="w-32 rounded-xl bg-white shadow-lg border border-gray-100 overflow-hidden focus:outline-none"
         >
-          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${config.dot}`} />
-          {config.label}
-          <svg className="w-2.5 h-2.5 opacity-50 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </Listbox.Button>
-        <Listbox.Options className="absolute z-50 mt-1.5 w-32 rounded-xl bg-white shadow-lg border border-gray-100 overflow-hidden focus:outline-none">
           {statuses.map((status) => {
             const cfg = statusConfig[status];
+            const isSelected = status === value;
             return (
-              <Listbox.Option
+              <li
                 key={status}
-                value={status}
-                className={({ active }) =>
-                  `cursor-pointer select-none px-2.5 py-1.5 flex items-center gap-2 transition-colors ${active ? 'bg-gray-50' : 'bg-white'}`
-                }
+                onMouseDown={() => handleSelect(status)}  // mousedown fires before blur
+                className="cursor-pointer select-none px-2.5 py-1.5 flex items-center gap-2 hover:bg-gray-50 transition-colors"
               >
-                {({ selected }) => (
-                  <>
-                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
-                    <span className="text-xs font-medium text-gray-700">{cfg.label}</span>
-                    {selected && (
-                      <svg className="w-3 h-3 ml-auto text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </>
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
+                <span className="text-xs font-medium text-gray-700">{cfg.label}</span>
+                {isSelected && (
+                  <svg className="w-3 h-3 ml-auto text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
                 )}
-              </Listbox.Option>
+              </li>
             );
           })}
-        </Listbox.Options>
-      </Listbox>
-    </div>
+        </ul>,
+        document.body
+      )}
+    </>
   );
 }
 
@@ -336,7 +372,7 @@ export const AdminAppointmentsPage = () => {
 
       {/* ── TABLE ── */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto ">
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">

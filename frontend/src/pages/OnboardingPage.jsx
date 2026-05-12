@@ -170,7 +170,7 @@ const PremiumCheckbox = ({ label, description, register, name, icon: Icon }) => 
 );
 
 // Premium Input component
-const PremiumInput = ({ register, name, label, placeholder, type = "text", error, icon: Icon, optional = false }) => (
+const PremiumInput = ({ register, name, label, placeholder, type = "text", error, icon: Icon, optional = false, max, min }) => (
   <div className="space-y-2">
     <label className="flex items-center gap-2 text-sm font-semibold text-[#5B544C]">
       {Icon && <Icon className="h-4 w-4 text-[#F5A623]" />}
@@ -181,6 +181,8 @@ const PremiumInput = ({ register, name, label, placeholder, type = "text", error
       type={type}
       {...register(name)}
       placeholder={placeholder}
+      max={max}
+      min={min}
       className="w-full rounded-2xl border border-[#F0E5D8] bg-white px-5 py-3.5 text-sm text-[#2D2D2D] outline-none transition-all duration-200 placeholder:text-[#C8BBA8] focus:border-[#F5A623] focus:ring-2 focus:ring-[#F5A623]/20"
     />
     {error && (
@@ -346,7 +348,7 @@ export const OnboardingPage = () => {
     return () => clearTimeout(timeout);
   }, [currentStep, isDraftReady, saveStepMutation, values, isClearingDraft]);
 
-  const photoPreview = values.photoDataUrl || userProfile?.avatar || "";
+  const photoPreview = values.photoDataUrl || "";
 
   const summaryItems = useMemo(
     () => [
@@ -665,6 +667,7 @@ export const OnboardingPage = () => {
                             name="dob"
                             label="Date of Birth"
                             type="date"
+                            max={new Date().toISOString().slice(0, 10)}
                             optional
                           />
                           <PremiumInput
@@ -681,15 +684,6 @@ export const OnboardingPage = () => {
                             placeholder="Golden cream"
                             optional
                           />
-                          <div className="sm:col-span-2">
-                            <PremiumInput
-                              register={register}
-                              name="microchipId"
-                              label="Microchip ID"
-                              placeholder="Optional"
-                              optional
-                            />
-                          </div>
                         </div>
                       </div>
                     )}
@@ -775,28 +769,6 @@ export const OnboardingPage = () => {
                           />
                         </div>
 
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <PremiumSelect
-                            register={register}
-                            name="notificationPreference"
-                            label="Notification Preference"
-                            options={[
-                              { value: "email-and-app", label: "📧 Email + In-App" },
-                              { value: "email-only", label: "📧 Email Only" },
-                              { value: "app-only", label: "📱 In-App Only" },
-                            ]}
-                          />
-                          <PremiumSelect
-                            register={register}
-                            name="carePlanPreference"
-                            label="Care Plan Preference"
-                            options={[
-                              { value: "balanced", label: "⚖️ Balanced" },
-                              { value: "wellness-first", label: "🌿 Wellness First" },
-                              { value: "concierge-premium", label: "✨ Concierge Premium" },
-                            ]}
-                          />
-                        </div>
                       </div>
                     )}
 

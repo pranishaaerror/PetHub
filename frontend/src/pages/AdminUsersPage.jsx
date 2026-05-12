@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useQueryClient } from "@tanstack/react-query";
 import { Listbox } from "@headlessui/react";
 import { Mail, PawPrint, Phone, Plus, ShieldCheck, Trash2, ChevronDown, X, Check, Eye, EyeOff } from "lucide-react";
@@ -17,37 +18,73 @@ const roleConfig = {
 
 function RoleDropdown({ value, onChange, disabled }) {
   const { tone, dot } = roleConfig[value] ?? roleConfig.user;
+  const buttonRef = useRef(null);
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  const handleOpen = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+      });
+    }
+    setOpen(true);
+  };
+
+  const handleSelect = (role) => {
+    onChange(role);
+    setOpen(false);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (buttonRef.current && !buttonRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
   return (
-    <div className="relative">
-      <Listbox value={value} onChange={onChange} disabled={disabled}>
-        <Listbox.Button
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all hover:opacity-75 disabled:cursor-not-allowed disabled:opacity-50 ${tone}`}
+    <>
+      <button
+        ref={buttonRef}
+        onClick={handleOpen}
+        disabled={disabled}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all hover:opacity-75 disabled:cursor-not-allowed disabled:opacity-50 ${tone}`}
+      >
+        <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
+        <span className="capitalize">{value}</span>
+        <ChevronDown className="w-3 h-3 opacity-50" />
+      </button>
+
+      {open && createPortal(
+        <ul
+          style={{ position: 'absolute', top: pos.top, left: pos.left, zIndex: 9999 }}
+          className="w-40 rounded-xl bg-white shadow-lg border border-gray-100 overflow-hidden"
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
-          <span className="capitalize">{value}</span>
-          <ChevronDown className="w-3 h-3 opacity-50" />
-        </Listbox.Button>
-        <Listbox.Options className="absolute z-50 mt-2 w-40 rounded-xl bg-white shadow-lg border border-gray-100 overflow-hidden focus:outline-none">
-          {ROLES.map((role) => (
-            <Listbox.Option
-              key={role}
-              value={role}
-              className={({ active }) =>
-                `cursor-pointer select-none px-3 py-2.5 flex items-center gap-2.5 transition-colors ${active ? "bg-gray-50" : "bg-white"}`
-              }
-            >
-              {({ selected }) => (
-                <>
-                  <span className={`w-2 h-2 rounded-full ${roleConfig[role].dot}`} />
-                  <span className="text-xs font-medium text-gray-700 capitalize">{role}</span>
-                  {selected && <Check className="w-3.5 h-3.5 ml-auto text-gray-400" />}
-                </>
-              )}
-            </Listbox.Option>
-          ))}
-        </Listbox.Options>
-      </Listbox>
-    </div>
+          {ROLES.map((role) => {
+            const isSelected = role === value;
+            return (
+              <li
+                key={role}
+                onMouseDown={() => handleSelect(role)}
+                className="cursor-pointer select-none px-3 py-2.5 flex items-center gap-2.5 hover:bg-gray-50 transition-colors"
+              >
+                <span className={`w-2 h-2 rounded-full ${roleConfig[role].dot}`} />
+                <span className="text-xs font-medium text-gray-700 capitalize">{role}</span>
+                {isSelected && <Check className="w-3.5 h-3.5 ml-auto text-gray-400" />}
+              </li>
+            );
+          })}
+        </ul>,
+        document.body
+      )}
+    </>
   );
 }
 

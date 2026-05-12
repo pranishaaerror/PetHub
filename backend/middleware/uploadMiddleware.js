@@ -27,7 +27,7 @@ const allowedMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 export const petPhotoUpload = multer({
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024,
+    fileSize: 15 * 1024 * 1024,
   },
   fileFilter: (_req, file, callback) => {
     if (!allowedMimeTypes.has(file.mimetype)) {

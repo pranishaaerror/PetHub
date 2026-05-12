@@ -96,6 +96,8 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL?.replace("/api", "") || "ht
 const resolveImage = (path) => {
   if (!path) return null;
   if (path.startsWith("http")) return path;
+  // Skip corrupted paths that look like API routes
+  if (path.includes("/adoption/") && path.endsWith("/photo")) return null;
   return `${BACKEND_URL}${path}`;
 };
 

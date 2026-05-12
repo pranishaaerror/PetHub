@@ -1,82 +1,18 @@
-import { useEffect } from "react";
-import {
-  ArrowUpRight,
-  CalendarHeart,
-  MapPin,
-  Sparkles,
-  UsersRound,
-  Heart,
-  Shield,
-  Clock3,
-  CheckCircle2,
-  MessageCircleHeart,
-} from "lucide-react";
-import { Link } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "react-toastify";
-import { useQueryClient } from "@tanstack/react-query";
-import { communityPlaydates, featuredMeetup } from "../utils/communityJourneys";
-import { useCommunityMeetups } from "../apis/community/hooks";
-import { useCurrentUser, useUpdateCurrentUser } from "../apis/users/hooks";
-import { useAuth } from "../context/AuthContext";
+import { useEffect, useState } from 'react'
+import Footer from '../Footer'
+import Header from '../Header';
+import { featuredMeetup } from '../../utils/communityJourneys';
+import { ArrowUpRight, CalendarHeart, MapPin, Shield, Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useCommunityMeetups } from '../../apis/community/hooks';
 
-const interestSchema = z.object({
-  petName: z.string().optional(),
-  address: z.string().optional(),
-  interestType: z.string().optional(),
-});
-
-export const CommunityPage = () => {
-  const queryClient = useQueryClient();
-  const { currentUser } = useAuth();
-  const { data: meetupsResponse } = useCommunityMeetups({ approvedOnly: true });
-  const { data: userResponse } = useCurrentUser({ enabled: !!currentUser });
-  const { mutateAsync: updateCurrentUser, isPending: isSavingInterest } = useUpdateCurrentUser();
-
-  const user = userResponse?.data;
-  const approvedMeetups = meetupsResponse?.data ?? [];
-
-  const liveStats = [
-    { value: String(approvedMeetups.length), label: "Upcoming community events" },
-    { value: String(approvedMeetups.reduce((sum, m) => sum + (m.attendees?.length ?? 0), 0)), label: "RSVPs confirmed" },
-    { value: String(new Set(approvedMeetups.map(m => m.location)).size), label: "Active locations" },
-  ];
-
-  const interestForm = useForm({
-    resolver: zodResolver(interestSchema),
-    defaultValues: { petName: "", address: "", interestType: "" },
-  });
-
-  useEffect(() => {
-    if (user?.communityInterest) {
-      interestForm.reset({
-        petName: user.communityInterest.petName ?? "",
-        address: user.communityInterest.address ?? "",
-        interestType: user.communityInterest.interestType ?? "",
-      });
-    }
-  }, [user, interestForm]);
-
-  const onSaveInterest = interestForm.handleSubmit(async (values) => {
-    try {
-      await updateCurrentUser({
-        communityInterest: {
-          petName: values.petName?.trim() || "",
-          address: values.address?.trim() || "",
-          interestType: values.interestType?.trim() || "",
-        },
-      });
-      await queryClient.invalidateQueries({ queryKey: ["current-user"] });
-      toast.success("Community preferences saved.");
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
-    }
-  });
+const Community = () => {
+    const { data: meetupsResponse } = useCommunityMeetups({ approvedOnly: true });
+    const approvedMeetups = meetupsResponse?.data ?? [];
+    
 
   return (
-    <div className="cm-root min-h-screen bg-transparent">
+     <div className="min-h-screen bg-[#F4EAD9] px-2 py-2 text-[#2D2D2D] sm:px-3 sm:py-3 md:px-4 md:py-4">
       <style>{`
         .cm-root { font-family: inherit; color: #1A1A1A; }
         .cm-serif { font-family: inherit; }
@@ -86,7 +22,6 @@ export const CommunityPage = () => {
           position: relative;
           overflow: hidden;
           background: linear-gradient(135deg, #1A1614 0%, #2C1F18 45%, #1A1A2A 100%);
-          padding: 80px 48px 90px;
         }
         @media (max-width: 640px) { .cm-hero { padding: 56px 24px 64px; } }
 
@@ -260,77 +195,83 @@ export const CommunityPage = () => {
         .fade-up-3 { animation-delay: 0.28s; }
         .fade-up-4 { animation-delay: 0.38s; }
       `}</style>
+        <div className="mx-auto max-w-[1500px] rounded-[36px] bg-white/60 shadow-[0_28px_80px_rgba(45,45,45,0.09)] backdrop-blur-xl">
 
-      {/* ── STATS STRIP ── */}
-      <div className="cm-stats-strip">
-        {liveStats.map((stat, i) => {
-          const palette = [
-            { bg: "#FFF0D6", color: "#F5A623", Ic: UsersRound },
-            { bg: "#E8F5E9", color: "#43A047", Ic: CheckCircle2 },
-            { bg: "#EDE7F6", color: "#7B68EE", Ic: Heart },
-          ];
-          const p = palette[i % palette.length];
-          return (
-            <div key={stat.label} className="cm-stat-item">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl" style={{ background: p.bg }}>
-                <p.Ic className="h-6 w-6" style={{ color: p.color }} />
-              </div>
-              <div>
-                <p className="cm-serif text-3xl font-bold text-[#1A1A1A]">{stat.value}</p>
-                <p className="mt-0.5 text-sm text-[#9B9B9B]">{stat.label}</p>
-              </div>
+            <Header />
+
+        {/* ── FULL-WIDTH DARK HERO ── */}
+        <div className="cm-hero relative overflow-hidden px-6 py-20 md:px-12 lg:px-16">
+
+          <div className="relative z-10 max-w-4xl">
+            <div className="fade-up fade-up-1 cm-hero-eyebrow">
+                <Sparkles className="h-3.5 w-3.5" />
+                {featuredMeetup.eyebrow}
             </div>
-          );
-        })}
-      </div>
 
-      {/* ── BODY CONTENT ── */}
-      <div className="mx-auto py-8">
+            <h1 className="fade-up fade-up-2 cm-hero-title">
+                Your pet-loving<br />
+                <span>community</span> awaits.
+            </h1>
 
-        {/* Approved Events */}
-        <div className="cm-card p-7">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="cm-chip">Approved Events</span>
-              <h2 className="cm-serif mt-3 text-2xl font-bold">Curated by PetHub</h2>
+            <p className="fade-up fade-up-3 cm-hero-sub">
+                {featuredMeetup.summary}
+            </p>
+
             </div>
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FFF0D6]">
-              <Shield className="h-5 w-5 text-[#F5A623]" />
-            </div>
-          </div>
-          <p className="mt-2 text-sm text-[#6B6B6B]">Only high-quality, admin-approved listings appear here.</p>
-
-          <div className="mt-6 space-y-3">
-            {approvedMeetups.length > 0 ? (
-              approvedMeetups.map((m) => (
-                <div key={m._id} className="meetup-row">
-                  <h3 className="font-semibold text-[#1A1A1A]">{m.title}</h3>
-                  <p className="mt-1 text-sm text-[#6B6B6B] line-clamp-2">{m.description}</p>
-                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-[#8B7B66]">
-                    <span className="flex items-center gap-1.5">
-                      <CalendarHeart className="h-3.5 w-3.5 text-[#F5A623]" />
-                      {m.date} · {m.time}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5 text-[#F5A623]" />
-                      {m.location}
-                    </span>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between">
-                    <p className="text-xs text-[#B78331]">Host · {m.hostName}</p>
-                    <Link to={`/community/meetups/${m._id || m.slug}`} className="flex items-center gap-1 text-xs font-600 text-[#C87D2A] hover:text-[#A56A22]">
-                      View details <ArrowUpRight className="h-3.5 w-3.5" />
-                    </Link>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="py-8 text-center text-sm text-[#9B9B9B]">No approved events yet — check back soon!</p>
-            )}
-          </div>
         </div>
 
-      </div>
+        {/* ── BODY CONTENT ── */}
+        <div className="mx-auto bg-[#FAF6F0] px-6 py-8 md:px-12 lg:px-16">
+
+            {/* Approved Events */}
+            <div className="cm-card p-7">
+            <div className="flex items-center justify-between">
+                <div>
+                <span className="cm-chip">Approved Events</span>
+                <h2 className="cm-serif mt-3 text-2xl font-bold">Curated by PetHub</h2>
+                </div>
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FFF0D6]">
+                <Shield className="h-5 w-5 text-[#F5A623]" />
+                </div>
+            </div>
+            <p className="mt-2 text-sm text-[#6B6B6B]">Only high-quality, admin-approved listings appear here.</p>
+
+            <div className="mt-6 space-y-3">
+                {approvedMeetups.length > 0 ? (
+                approvedMeetups.map((m) => (
+                    <div key={m._id} className="meetup-row">
+                    <h3 className="font-semibold text-[#1A1A1A]">{m.title}</h3>
+                    <p className="mt-1 text-sm text-[#6B6B6B] line-clamp-2">{m.description}</p>
+                    <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-[#8B7B66]">
+                        <span className="flex items-center gap-1.5">
+                        <CalendarHeart className="h-3.5 w-3.5 text-[#F5A623]" />
+                        {m.date} · {m.time}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 text-[#F5A623]" />
+                        {m.location}
+                        </span>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between">
+                        <p className="text-xs text-[#B78331]">Host · {m.hostName}</p>
+                        <Link to={`/community/meetups/${m._id || m.slug}`} className="flex items-center gap-1 text-xs font-600 text-[#C87D2A] hover:text-[#A56A22]">
+                        View details <ArrowUpRight className="h-3.5 w-3.5" />
+                        </Link>
+                    </div>
+                    </div>
+                ))
+                ) : (
+                <p className="py-8 text-center text-sm text-[#9B9B9B]">No approved events yet — check back soon!</p>
+                )}
+            </div>
+            </div>
+
+        </div>
+        <Footer />
+
+        </div>
     </div>
   );
 };
+
+export default Community;

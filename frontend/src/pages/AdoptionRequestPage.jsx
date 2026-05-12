@@ -200,8 +200,8 @@ export const AdoptionRequestPage = () => {
                   <p className="mt-1 text-lg font-semibold">{pet.location}</p>
                 </div>
                 <div className="rounded-[22px] bg-white px-4 py-4 shadow-[0_14px_28px_rgba(45,45,45,0.04)]">
-                  <p className="text-sm text-[#8B7B66]">Temperament</p>
-                  <p className="mt-1 text-lg font-semibold">{pet.temperament}</p>
+                  <p className="text-sm text-[#8B7B66]">Description</p>
+                  <p className="mt-1 text-sm leading-relaxed text-[#2D2D2D]">{pet.summary || pet.description || "—"}</p>
                 </div>
               </div>
             </div>

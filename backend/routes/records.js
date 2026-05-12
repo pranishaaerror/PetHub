@@ -18,10 +18,10 @@ const canAccessPet = async ({ userId, petId, isAdmin, veterinarianId }) => {
   }
 
   if (veterinarianId) {
+    // Allow vet access if they are assigned to any appointment for this pet
     const allowed = await Appointment.exists({
       petId,
       veterinarianId,
-      vetAcceptance: "accepted",
       status: { $in: ["pending", "confirmed", "completed"] },
     });
 
@@ -86,7 +86,9 @@ router.get("/:petId", verifyToken, async (req, res) => {
       return res.status(404).json({ message: "Pet not found." });
     }
 
-    const records = await MedicalRecord.find({ petId: pet._id }).sort({ date: -1, createdAt: -1 });
+    const records = await MedicalRecord.find({ petId: pet._id })
+      .populate("veterinarianId", "fullName displayName")
+      .sort({ date: -1, createdAt: -1 });
     res.json(records);
   } catch (error) {
     res.status(500).json({ message: error.message || "Server error" });

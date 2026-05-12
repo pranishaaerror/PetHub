@@ -215,6 +215,7 @@ export const sendEngagementEmails = async ({
           <p style="font-size: 12px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase; color: #B78331;">PetHub Request</p>
           <h1 style="margin: 12px 0 8px; font-size: 28px;">${escapeHtml(title)}</h1>
           <p style="margin: 0 0 18px; color: #6B6B6B; line-height: 1.8;">
+          
             Hello ${escapeHtml(requesterName)}, ${escapeHtml(intro)}
           </p>
           <div style="background: #FFF4E2; border-radius: 20px; padding: 18px;">

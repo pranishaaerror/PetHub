@@ -35,7 +35,7 @@ export const UploadPetPhotoCard = ({
       <p className="mt-2 max-w-md text-sm leading-7 text-[#6B6B6B]">{helperText}</p>
       <span className="pet-button-secondary mt-5 gap-2">
         <Sparkles className="h-4 w-4 text-[#F5A623]" />
-        {photoPreview ? "Replace photo" : "Choose photo"}
+        {photoPreview ? "Change photo" : "Upload photo"}
       </span>
 
       <input

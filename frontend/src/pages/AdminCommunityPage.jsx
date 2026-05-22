@@ -265,7 +265,7 @@ function AttendeesModal({ meetup, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F5A623]/10 backdrop-blur-[3px] px-4 py-6">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col">
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FFF0D6]">
@@ -291,7 +291,7 @@ function AttendeesModal({ meetup, onClose }) {
           </div>
         ) : (
           <>
-          <div className="grid grid-cols-3 gap-2 px-4 pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+          <div className="grid grid-cols-[2fr_3fr_2fr] gap-4 px-4 pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
             <span>Name</span>
             <span>Email</span>
             <span>Phone</span>
@@ -301,18 +301,21 @@ function AttendeesModal({ meetup, onClose }) {
               const name = user.fullName || user.displayName || user.email || "User";
               const phone = user.phoneNumber || user.contactNumber;
               return (
-                <div key={user._id ?? i} className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-[#FAFAF8] px-4 py-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#F5A623,#FFB347)] text-sm font-bold text-white">
-                    {name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="min-w-0 flex-1 grid grid-cols-3 gap-2 items-center">
+                <div key={user._id ?? i} className="grid grid-cols-[2fr_3fr_2fr] gap-4 items-center rounded-2xl border border-gray-100 bg-[#FAFAF8] px-4 py-3">
+                 
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#F5A623,#FFB347)] text-xs font-bold text-white">
+                      {name.charAt(0).toUpperCase()}
+                    </div>
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-[#2D2D2D] truncate">{name}</p>
                       {user.petHubId && <p className="text-[11px] font-semibold text-amber-600">{user.petHubId}</p>}
                     </div>
-                    <p className="text-xs text-gray-500 truncate">{user.email || "—"}</p>
-                    <p className="text-xs text-gray-500 truncate">{phone || "—"}</p>
                   </div>
+                  
+                  <p className="text-xs text-gray-500 truncate">{user.email || "—"}</p>
+                  
+                  <p className="text-xs text-gray-500">{phone || "—"}</p>
                 </div>
               );
             })}
@@ -404,7 +407,7 @@ function MeetupCard({ meetup, onEdit, onDelete, onToggle, isToggling, onViewAtte
           </span>
         </div>
 
-        {/* Tags */}
+       
         {meetup.tags?.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {meetup.tags.slice(0, 4).map((tag) => (
@@ -416,7 +419,7 @@ function MeetupCard({ meetup, onEdit, onDelete, onToggle, isToggling, onViewAtte
         )}
       </div>
 
-      {/* Action footer */}
+      
       <div className="flex border-t border-gray-100">
         <button
           onClick={() => onEdit(meetup)}
@@ -551,7 +554,7 @@ export const AdminCommunityPage = () => {
         </div> */}
       </div>
 
-      {/* ── CARD GRID ── */}
+      
       {meetups.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-gray-200 bg-white py-20 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-3xl">

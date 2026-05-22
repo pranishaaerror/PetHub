@@ -21,8 +21,19 @@ router.get("/meetups", async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Filter: only show events from today onwards (or those without an eventDate for backwards compat)
-    const dateFilter = { $or: [{ eventDate: { $gte: today } }, { eventDate: null }] };
+    // Auto-delete past events silently (both by eventDate and old null-eventDate events)
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    CommunityMeetup.deleteMany({
+      $or: [
+        { eventDate: { $lt: today, $ne: null } },
+        // Also delete old events without eventDate that were created more than 2 days ago
+        { eventDate: null, createdAt: { $lt: yesterday } },
+      ],
+    }).catch(() => {});
+
+    // Filter: only show events from today onwards
+    const dateFilter = { eventDate: { $gte: today } };
     const approvedFilter = approvedOnly
       ? { $or: [{ approved: true }, { approved: { $exists: false } }] }
       : {};

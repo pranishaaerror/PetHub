@@ -168,6 +168,47 @@ function VetDetailPanel({ appointment, onClose, mutations }) {
             />
           </div>
 
+          {/* Save / complete buttons — moved above upload */}
+
+          {/* Upload report — hidden when completed */}
+          {appointment.status !== 'completed' && (
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#B78331]">
+              <Upload className="h-3.5 w-3.5" /> Upload medical report
+            </label>
+              <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F0DFC0] bg-[#FFF8EE] py-5 transition hover:border-[#F5A623] hover:bg-[#FFF5E0]">
+                <Upload className="h-6 w-6 text-[#F5A623]" />
+                <p className="text-xs font-semibold text-[#B78331]">
+                  {uploading ? "Uploading…" : "Click to upload PDF or image"}
+                </p>
+                <p className="text-[11px] text-gray-400">PDF, JPG, PNG · max 12MB</p>
+                <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+              </label>
+            {appointment.medicalReportUrl && (
+              <a
+                href={`${BACKEND}${appointment.medicalReportUrl}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[#F5A623] hover:underline"
+              >
+                <FileText className="h-3.5 w-3.5" /> View uploaded report
+              </a>
+            )}
+          </div>
+          )}
+
+          {/* Show uploaded report link when completed */}
+          {appointment.status === 'completed' && appointment.medicalReportUrl && (
+            <a
+              href={`${BACKEND}${appointment.medicalReportUrl}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#F5A623] hover:underline"
+            >
+              <FileText className="h-3.5 w-3.5" /> View uploaded report
+            </a>
+          )}
+
           {/* Save / complete buttons */}
           {appointment.status !== 'completed' && (
             <div className="flex flex-wrap gap-3">
@@ -190,40 +231,7 @@ function VetDetailPanel({ appointment, onClose, mutations }) {
             </div>
           )}
 
-          {/* Upload report */}
-          <div>
-            <label className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#B78331]">
-              <Upload className="h-3.5 w-3.5" /> Upload medical report
-            </label>
-            {appointment.status === 'completed' ? (
-              <div className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs text-gray-400">
-                <Upload className="h-4 w-4" />
-                Report upload locked — visit is completed.
-              </div>
-            ) : (
-              <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F0DFC0] bg-[#FFF8EE] py-5 transition hover:border-[#F5A623] hover:bg-[#FFF5E0]">
-                <Upload className="h-6 w-6 text-[#F5A623]" />
-                <p className="text-xs font-semibold text-[#B78331]">
-                  {uploading ? "Uploading…" : "Click to upload PDF or image"}
-                </p>
-                <p className="text-[11px] text-gray-400">PDF, JPG, PNG · max 12MB</p>
-                <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
-              </label>
-            )}
-            {appointment.medicalReportUrl && (
-              <a
-                href={`${BACKEND}${appointment.medicalReportUrl}`}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[#F5A623] hover:underline"
-              >
-                <FileText className="h-3.5 w-3.5" /> View uploaded report
-              </a>
-            )}
-          </div>
-
-          {/* Medical history + add record */}
-          {petId ? (
+          {petId && (
             <div className="rounded-2xl border border-[#F0E2CC] bg-[#FFF8EE] p-5">
               <p className="mb-3 text-sm font-bold text-[#2D2D2D]">Medical history</p>
               <div className="max-h-44 space-y-2 overflow-y-auto">
@@ -264,10 +272,6 @@ function VetDetailPanel({ appointment, onClose, mutations }) {
                 </button>
               </div>
             </div>
-          ) : (
-            <p className="text-sm text-gray-400">
-              This booking is not linked to a pet profile — medical history unavailable.
-            </p>
           )}
         </div>
       </div>
@@ -423,7 +427,7 @@ export const ProviderBookingsPage = () => {
                         <StatusIcon className="h-3 w-3" /> {cfg.label}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4">
                       <button
                         onClick={() => setSelectedId(row._id)}
                         className="inline-flex items-center gap-1.5 rounded-full bg-[#FFF5E0] px-4 py-1.5 text-xs font-semibold text-[#C77E1D] hover:bg-[#FFE9A8] transition-colors"

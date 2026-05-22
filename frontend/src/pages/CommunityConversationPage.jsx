@@ -113,11 +113,10 @@ export const CommunityConversationPage = () => {
         </div>
 
         <div className="pet-card p-6 md:p-8">
-          <span className="pet-chip">Conversation Request</span>
-          <h2 className="mt-4 text-3xl font-bold">Send a clear note with a real follow-up trail.</h2>
+          <span className="pet-chip">Join Request</span>
+          <h2 className="mt-4 text-3xl font-bold">Join our pet-loving community.</h2>
           <p className="mt-3 text-sm leading-7 text-[#6B6B6B]">
-            This page turns the message and connect buttons into an actual PetHub workflow with saved
-            requests and email confirmation.
+           Connect with fellow pet parents, stay updated with community activities, and become part of a trusted network built for animal lovers.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
@@ -166,17 +165,7 @@ export const CommunityConversationPage = () => {
               </label>
             </div>
 
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-[#5B544C]">Message</span>
-              <textarea
-                rows={5}
-                value={form.message}
-                onChange={(event) => setForm((current) => ({ ...current, message: event.target.value }))}
-                placeholder="Share your pet's temperament, availability, and the tone you want PetHub to set."
-                className="w-full rounded-[22px] bg-[#FFF8EE] px-4 py-4 text-sm outline-none ring-2 ring-transparent transition focus:ring-[#F5C062]"
-                required
-              />
-            </label>
+           
 
             <Button type="submit" disabled={isPending} className="pet-button-primary w-full gap-2">
               <MessageCircleHeart className="h-4 w-4" />

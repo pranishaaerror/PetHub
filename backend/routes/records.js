@@ -72,6 +72,19 @@ router.post("/", verifyToken, async (req, res) => {
   }
 });
 
+router.get("/user/me", verifyToken, async (req, res) => {
+  try {
+    const user = await getCurrentDatabaseUser(req);
+    const records = await MedicalRecord.find({ userId: user._id })
+      .populate("veterinarianId", "fullName displayName")
+      .populate("appointmentId", "nextDueDate")
+      .sort({ date: -1, createdAt: -1 });
+    res.json(records);
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+});
+
 router.get("/:petId", verifyToken, async (req, res) => {
   try {
     const user = await getCurrentDatabaseUser(req);

@@ -13,6 +13,12 @@ export const getRecordsByPet = (petId) =>
     method: "GET",
   });
 
+export const getMyRecords = () =>
+  axiosInstance.request({
+    url: "/records/user/me",
+    method: "GET",
+  });
+
 export const updateRecord = ({ id, data }) =>
   axiosInstance.request({
     url: `/records/${id}`,

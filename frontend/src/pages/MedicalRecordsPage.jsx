@@ -7,19 +7,25 @@ import { Link } from "react-router-dom";
 import { EmptyState } from "../components/EmptyState";
 import { PetHubLoader } from "../components/PetHubLoader";
 import { useMyPets } from "../apis/pets/hooks";
-import { useRecordsByPet } from "../apis/records/hooks";
+import { useMyRecords, useRecordsByPet } from "../apis/records/hooks";
 
 export const MedicalRecordsPage = () => {
   const { data: petsResponse, isLoading: isPetsLoading } = useMyPets();
   const primaryPet = petsResponse?.data?.primaryPet ?? null;
   const { data: recordsResponse, isLoading: isRecordsLoading } = useRecordsByPet(primaryPet?._id);
+  const { data: allRecordsResponse } = useMyRecords();
 
+  const allRecords = allRecordsResponse?.data ?? [];
   const records = (recordsResponse?.data ?? []).filter((r) => r.veterinarianId);
 
-  const dueReminders = records
-    .filter((record) => record.nextDueDate)
-    .sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate))
-    .slice(0, 3);
+  const dueReminders = allRecords
+    .filter((record) => record.nextDueDate || record.appointmentId?.nextDueDate)
+    .map((record) => ({
+      ...record,
+      _resolvedDueDate: record.nextDueDate || record.appointmentId?.nextDueDate,
+    }))
+    .sort((a, b) => new Date(a._resolvedDueDate) - new Date(b._resolvedDueDate))
+    .slice(0, 5);
 
   if (isPetsLoading || isRecordsLoading) {
     return (
@@ -58,23 +64,24 @@ export const MedicalRecordsPage = () => {
       <section className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
 
         {/* Due reminders */}
-        <div className="pet-card p-6">
-          <div className="flex items-center justify-between">
+        <div className="pet-card p-6 flex flex-col" style={{ maxHeight: "520px" }}>
+          <div className="flex items-center justify-between shrink-0">
             <div>
               <span className="pet-chip">Due Reminders</span>
               <h2 className="mt-4 text-2xl font-bold">Watch these next</h2>
             </div>
             <AlertTriangle className="h-7 w-7 text-[#F5A623]" />
           </div>
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 flex-1 overflow-y-auto space-y-4 pr-1">
             {dueReminders.length ? (
               dueReminders.map((record) => (
                 <div
                   key={record._id}
-                  className="rounded-[24px] bg-[#FFF8EE] p-4 text-sm leading-7 text-[#6B6B6B] shadow-[0_16px_35px_rgba(45,45,45,0.04)]"
+                  className="rounded-[24px] bg-[#FFF8EE] p-4 shadow-[0_16px_35px_rgba(45,45,45,0.04)]"
                 >
-                  <p className="font-semibold text-[#2D2D2D]">{record.title}</p>
-                  <p className="mt-1">Due {new Date(record.nextDueDate).toLocaleDateString()}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[#B78331]">{record.type}</p>
+                  <p className="mt-1 font-semibold text-[#2D2D2D]">{record.title}</p>
+                  <p className="mt-1 text-sm text-[#6B6B6B]">Next due {new Date(record._resolvedDueDate).toLocaleDateString()}</p>
                 </div>
               ))
             ) : (
@@ -85,9 +92,8 @@ export const MedicalRecordsPage = () => {
           </div>
         </div>
 
-        {/* Timeline */}
-        <div className="pet-card overflow-hidden p-6">
-          <div className="flex items-center justify-between">
+        <div className="pet-card overflow-hidden p-6 flex flex-col" style={{ maxHeight: "520px" }}>
+          <div className="flex items-center justify-between shrink-0">
             <div>
               <span className="pet-chip">Timeline</span>
               <h2 className="mt-4 text-2xl font-bold">Records for {primaryPet.name}</h2>
@@ -95,7 +101,7 @@ export const MedicalRecordsPage = () => {
             <FileChartColumn className="h-7 w-7 text-[#F5A623]" />
           </div>
 
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 flex-1 overflow-y-auto space-y-4 pr-1">
             {records.length ? (
               records.map((record) => (
                 <article

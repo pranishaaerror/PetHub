@@ -50,20 +50,40 @@ const Field = ({ label, required, children }) => (
 );
 
 function PetModal({ initial, onClose, onSave, isSaving, onPhotoUpload, isUploadingPhoto }) {
+  const BACKEND = import.meta.env.VITE_BACKEND_URL?.replace("/api", "") || "http://localhost:5000";
+
+  const resolvePreview = (path) => {
+    if (!path) return null;
+    if (path.startsWith("http") || path.startsWith("blob:")) return path;
+    if (path.startsWith("/uploads/")) return `${BACKEND}${path}`;
+    return null;
+  };
+
   const [form, setForm] = useState(initial ?? EMPTY_FORM);
-  const [previewUrl, setPreviewUrl] = useState(initial?.imageGallery?.[0] ?? null);
+  const [previewUrl, setPreviewUrl] = useState(() => resolvePreview(initial?.imageGallery?.[0] ?? null));
   const isEdit = !!initial;
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
   const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Show local preview immediately
-    setPreviewUrl(URL.createObjectURL(file));
+    // Show local blob preview immediately
+    const blobUrl = URL.createObjectURL(file);
+    setPreviewUrl(blobUrl);
     if (isEdit && initial?._id && onPhotoUpload) {
-      await onPhotoUpload({ petId: initial._id, file });
+      // Upload immediately for existing pets and update form imageGallery
+      try {
+        const res = await onPhotoUpload({ petId: initial._id, file });
+        // Update form so Save changes preserves the new photo
+        const newPhotoUrl = res?.data?.photoUrl ?? res?.photoUrl;
+        if (newPhotoUrl) {
+          setForm((f) => ({ ...f, imageGallery: [newPhotoUrl] }));
+        }
+      } catch {
+        // preview already shown, upload error handled by parent
+      }
     } else {
-      // Store file for after creation
+      // Store file to upload after creation
       setForm((f) => ({ ...f, _pendingPhoto: file }));
     }
   };
@@ -366,9 +386,10 @@ export const AdminAdoptionPetsPage = () => {
 
   const handlePhotoUpload = async ({ petId, file }) => {
     try {
-      await uploadPhoto({ petId, file });
+      const res = await uploadPhoto({ petId, file });
       await invalidate();
       toast.success("Photo uploaded.");
+      return res; // return so modal can update imageGallery
     } catch (err) {
       toast.error(err.response?.data?.message || err.message);
     }

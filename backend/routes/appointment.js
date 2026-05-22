@@ -129,7 +129,7 @@ router.post("/",verifyToken,async(req,res) => {
 
             const appointment = await Appointment.find(query)
               .populate(["userId", "serviceId", "veterinarianId"])
-              .sort({ appointmentTime: 1, createdAt: -1 });
+              .sort({ appointmentTime: -1, createdAt: -1 });
             res.json(appointment);
           } catch (err) {
             res.status(500).json({ message: err.message });

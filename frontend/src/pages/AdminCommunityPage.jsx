@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   CalendarDays, MapPin, Users, Plus, Pencil, Trash2,
-  X, Eye, EyeOff, Sparkles, PawPrint,
+  X, Eye, EyeOff, Sparkles, PawPrint, UserCheck,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { PetHubLoader } from "../components/PetHubLoader";
+import { axiosInstance } from "../apis/axios";
 import {
   useCommunityMeetups,
   useAdminCreateMeetup,
@@ -63,7 +64,7 @@ const inputCls = "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm o
 function MeetupModal({ initial, onClose, onSave, isSaving }) {
   const [form, setForm] = useState(() => {
     if (!initial) return EMPTY_FORM;
-    // When editing, keep rawDate/rawTime empty (admin re-picks) or try to parse
+   
     return { ...EMPTY_FORM, ...initial, rawDate: initial.rawDate ?? "", rawTime: initial.rawTime ?? "" };
   });
   const isEdit = !!initial;
@@ -90,7 +91,7 @@ function MeetupModal({ initial, onClose, onSave, isSaving }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F5A623]/10 backdrop-blur-[3px] px-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[92vh] flex flex-col">
 
-        {/* Modal header */}
+        
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100">
@@ -197,7 +198,7 @@ function MeetupModal({ initial, onClose, onSave, isSaving }) {
           </Field>
         </form>
 
-        {/* Modal footer */}
+        
         <div className="flex gap-3 px-6 py-4 border-t border-gray-100 shrink-0">
           <button
             type="button"
@@ -251,7 +252,87 @@ function DeleteConfirmModal({ meetup, onConfirm, onCancel, isPending }) {
   );
 }
 
-function MeetupCard({ meetup, onEdit, onDelete, onToggle, isToggling }) {
+function AttendeesModal({ meetup, onClose }) {
+  const [attendees, setAttendees] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    axiosInstance.get(`/community/meetups/${meetup._id}/attendees`)
+      .then((res) => setAttendees(res.data?.attendees ?? []))
+      .catch(() => setAttendees(meetup.attendees ?? []))
+      .finally(() => setLoading(false));
+  }, [meetup._id, meetup.attendees]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F5A623]/10 backdrop-blur-[3px] px-4 py-6">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FFF0D6]">
+              <UserCheck className="h-5 w-5 text-[#F5A623]" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-[#2D2D2D]">Attendees</h3>
+              <p className="text-xs text-gray-400 truncate max-w-[300px]">{meetup.title}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+        {loading ? (
+          <div className="py-12 text-center text-sm text-gray-400">Loading attendees…</div>
+        ) : attendees.length === 0 ? (
+          <div className="py-12 text-center">
+            <Users className="h-12 w-12 text-gray-200 mx-auto mb-3" />
+            <p className="text-sm text-gray-400">No attendees yet.</p>
+          </div>
+        ) : (
+          <>
+          <div className="grid grid-cols-3 gap-2 px-4 pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+            <span>Name</span>
+            <span>Email</span>
+            <span>Phone</span>
+          </div>
+          <div className="space-y-2">
+            {attendees.map((user, i) => {
+              const name = user.fullName || user.displayName || user.email || "User";
+              const phone = user.phoneNumber || user.contactNumber;
+              return (
+                <div key={user._id ?? i} className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-[#FAFAF8] px-4 py-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#F5A623,#FFB347)] text-sm font-bold text-white">
+                    {name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1 grid grid-cols-3 gap-2 items-center">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-[#2D2D2D] truncate">{name}</p>
+                      {user.petHubId && <p className="text-[11px] font-semibold text-amber-600">{user.petHubId}</p>}
+                    </div>
+                    <p className="text-xs text-gray-500 truncate">{user.email || "—"}</p>
+                    <p className="text-xs text-gray-500 truncate">{phone || "—"}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          </>
+        )}
+        </div>
+
+        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 shrink-0">
+          <p className="text-xs text-gray-400">{attendees.length} total attendee{attendees.length !== 1 ? "s" : ""}</p>
+          <button onClick={onClose} className="rounded-xl border border-[#E8D9C4] bg-white px-4 py-2 text-sm font-semibold text-[#5B4A36] hover:bg-[#FFF8EE] transition-colors">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MeetupCard({ meetup, onEdit, onDelete, onToggle, isToggling, onViewAttendees }) {
   const isPublished = meetup.approved !== false;
   const type = typeConfig[meetup.type] ?? { color: "bg-gray-100 text-gray-600", dot: "bg-gray-400", emoji: "📅" };
   const energy = energyColor[meetup.energyStyle] ?? "text-gray-600 bg-gray-50";
@@ -259,12 +340,12 @@ function MeetupCard({ meetup, onEdit, onDelete, onToggle, isToggling }) {
   return (
     <div className={`group relative flex flex-col rounded-2xl border bg-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 overflow-hidden ${isPublished ? "border-gray-200" : "border-dashed border-gray-300 opacity-75"}`}>
 
-      {/* Colour accent strip */}
+      
       <div className={`h-1.5 w-full ${isPublished ? "bg-gradient-to-r from-amber-400 to-amber-300" : "bg-gray-200"}`} />
 
       <div className="flex flex-col gap-3 p-5 flex-1">
 
-        {/* Top row: type badge + visibility */}
+        
         <div className="flex items-start justify-between gap-2">
           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${type.color}`}>
             <span>{type.emoji}</span>
@@ -285,13 +366,13 @@ function MeetupCard({ meetup, onEdit, onDelete, onToggle, isToggling }) {
           </button>
         </div>
 
-        {/* Title + description */}
+      
         <div>
           <h3 className="font-bold text-gray-900 leading-snug line-clamp-1">{meetup.title}</h3>
           <p className="mt-1 text-xs text-gray-500 leading-relaxed line-clamp-2">{meetup.description}</p>
         </div>
 
-        {/* Meta info */}
+      
         <div className="space-y-1.5">
           <p className="flex items-center gap-2 text-xs text-gray-600">
             <CalendarDays className="h-3.5 w-3.5 text-amber-500 shrink-0" />
@@ -303,11 +384,17 @@ function MeetupCard({ meetup, onEdit, onDelete, onToggle, isToggling }) {
           </p>
           <p className="flex items-center gap-2 text-xs text-gray-600">
             <Users className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-            {meetup.attendees?.length ?? 0} attendee{meetup.attendees?.length !== 1 ? "s" : ""}
+            <button
+              type="button"
+              onClick={() => onViewAttendees(meetup)}
+              className="hover:text-amber-600 hover:underline transition-colors"
+            >
+              {meetup.attendees?.length ?? 0} attendee{meetup.attendees?.length !== 1 ? "s" : ""}
+            </button>
           </p>
         </div>
 
-        {/* Host + energy */}
+       
         <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-100">
           <p className="text-xs text-gray-500 truncate">
             <span className="font-medium text-gray-700">{meetup.hostName}</span>
@@ -362,6 +449,7 @@ export const AdminCommunityPage = () => {
   const [editTarget, setEditTarget]     = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [togglingId, setTogglingId]     = useState(null);
+  const [attendeesTarget, setAttendeesTarget] = useState(null);
 
   const meetups = meetupsResponse?.data ?? [];
   const publishedCount = meetups.filter((m) => m.approved !== false).length;
@@ -440,7 +528,7 @@ export const AdminCommunityPage = () => {
         </button>
       </div>
 
-      {/* ── STAT CHIPS ── */}
+     
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
           <p className="text-xs font-semibold text-amber-600">Total Events</p>
@@ -454,13 +542,13 @@ export const AdminCommunityPage = () => {
           <p className="text-xs font-semibold text-gray-500">Hidden</p>
           <p className="mt-1 text-2xl font-bold text-gray-800">{hiddenCount}</p>
         </div>
-        <div className="rounded-2xl bg-blue-50 px-4 py-3 ring-1 ring-blue-200">
+        {/* <div className="rounded-2xl bg-blue-50 px-4 py-3 ring-1 ring-blue-200">
           <div className="flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5 text-blue-500" />
             <p className="text-xs font-semibold text-blue-600">Total RSVPs</p>
           </div>
           <p className="mt-1 text-2xl font-bold text-gray-800">{totalAttendees}</p>
-        </div>
+        </div> */}
       </div>
 
       {/* ── CARD GRID ── */}
@@ -491,6 +579,7 @@ export const AdminCommunityPage = () => {
               onDelete={setDeleteTarget}
               onToggle={handleToggleApproved}
               isToggling={togglingId === meetup._id}
+              onViewAttendees={setAttendeesTarget}
             />
           ))}
 
@@ -520,6 +609,12 @@ export const AdminCommunityPage = () => {
           onConfirm={handleDelete}
           onCancel={() => setDeleteTarget(null)}
           isPending={isDeleting}
+        />
+      )}
+      {attendeesTarget && (
+        <AttendeesModal
+          meetup={attendeesTarget}
+          onClose={() => setAttendeesTarget(null)}
         />
       )}
     </div>

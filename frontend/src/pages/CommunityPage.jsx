@@ -261,7 +261,7 @@ export const CommunityPage = () => {
         .fade-up-4 { animation-delay: 0.38s; }
       `}</style>
 
-      {/* ── STATS STRIP ── */}
+      
       <div className="cm-stats-strip">
         {liveStats.map((stat, i) => {
           const palette = [
@@ -284,10 +284,10 @@ export const CommunityPage = () => {
         })}
       </div>
 
-      {/* ── BODY CONTENT ── */}
+      
       <div className="mx-auto py-8">
 
-        {/* Approved Events */}
+       
         <div className="cm-card p-7">
           <div className="flex items-center justify-between">
             <div>
@@ -318,7 +318,7 @@ export const CommunityPage = () => {
                   </div>
                   <div className="mt-3 flex items-center justify-between">
                     <p className="text-xs text-[#B78331]">Host · {m.hostName}</p>
-                    <Link to={`/community/meetups/${m._id || m.slug}`} className="flex items-center gap-1 text-xs font-600 text-[#C87D2A] hover:text-[#A56A22]">
+                    <Link to={`/community/conversations/connect/${m._id}`} className="flex items-center gap-1 text-xs font-600 text-[#C87D2A] hover:text-[#A56A22]">
                       View details <ArrowUpRight className="h-3.5 w-3.5" />
                     </Link>
                   </div>

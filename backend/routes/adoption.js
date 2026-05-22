@@ -91,7 +91,9 @@ router.put("/:id", verifyToken, async (req, res) => {
     const updatedPet = await Adoption.findByIdAndUpdate(
       req.params.id,
       { petName, breed, age, gender, intakeDate, status, species, size,
-        vaccinated, healthStatus, description, location, adoptionFee, imageGallery,
+        vaccinated, healthStatus, description, location, adoptionFee,
+        // Only update imageGallery if explicitly provided
+        ...(imageGallery !== undefined ? { imageGallery } : {}),
         ...(Array.isArray(temperament) ? { temperament } : {}) },
       { new: true, runValidators: true }
     );

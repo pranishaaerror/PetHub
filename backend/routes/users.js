@@ -84,6 +84,8 @@ router.patch("/me", verifyToken, async (req, res) => {
         })(),
         qualifications:
           vp.qualifications !== undefined ? String(vp.qualifications).trim() : current.qualifications ?? "",
+        licenseNumber:
+          vp.licenseNumber !== undefined ? String(vp.licenseNumber).trim() : current.licenseNumber ?? "",
         availability: mergeAvailability(current.availability, vp.availability),
       };
     }

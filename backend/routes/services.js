@@ -17,6 +17,7 @@ router.post("/",verifyToken,async(req,res) => {
           durationMinutes = 45,
           category = "vet",
           isActive = true,
+          requiresVet = false,
         } = req.body;
 
         if (!serviceName || !description || price === undefined) {
@@ -31,7 +32,7 @@ const newServices = new Services({
     durationMinutes,
     category,
     isActive,
-   
+    requiresVet
       
     });
 
@@ -61,7 +62,7 @@ router.patch("/:id", verifyToken, async (req, res) => {
     if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Only admins can update services." });
     }
-    const { serviceName, description, price, durationMinutes, category, isActive } = req.body;
+    const { serviceName, description, price, durationMinutes, category, isActive, requiresVet } = req.body;
     const service = await Services.findByIdAndUpdate(
       req.params.id,
       { ...(serviceName !== undefined && { serviceName }),
@@ -69,7 +70,8 @@ router.patch("/:id", verifyToken, async (req, res) => {
         ...(price !== undefined && { price }),
         ...(durationMinutes !== undefined && { durationMinutes }),
         ...(category !== undefined && { category }),
-        ...(isActive !== undefined && { isActive }) },
+        ...(isActive !== undefined && { isActive }),
+        ...(requiresVet !== undefined && { requiresVet }) },
       { new: true, runValidators: true }
     );
     if (!service) return res.status(404).json({ message: "Service not found." });

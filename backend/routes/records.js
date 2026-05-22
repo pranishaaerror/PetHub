@@ -88,6 +88,13 @@ router.get("/:petId", verifyToken, async (req, res) => {
 
     const records = await MedicalRecord.find({ petId: pet._id })
       .populate("veterinarianId", "fullName displayName")
+      .populate({
+        path: "appointmentId",
+        populate: {
+          path: "serviceId",
+          select: "serviceName price category"
+        }
+      })
       .sort({ date: -1, createdAt: -1 });
     res.json(records);
   } catch (error) {

@@ -50,6 +50,10 @@ const servicesSchema = new mongoose.Schema({
         default: true,
         required: true,
     },
+    requiresVet: {
+        type: Boolean,
+        default: false,
+    },
    
 },{ timestamps: true });
 

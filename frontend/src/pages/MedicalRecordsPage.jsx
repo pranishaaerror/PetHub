@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   FileChartColumn,
+  FileText,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EmptyState } from "../components/EmptyState";
@@ -13,7 +14,7 @@ export const MedicalRecordsPage = () => {
   const primaryPet = petsResponse?.data?.primaryPet ?? null;
   const { data: recordsResponse, isLoading: isRecordsLoading } = useRecordsByPet(primaryPet?._id);
 
-  const records = recordsResponse?.data ?? [];
+  const records = (recordsResponse?.data ?? []).filter((r) => r.veterinarianId);
 
   const dueReminders = records
     .filter((record) => record.nextDueDate)
@@ -115,9 +116,34 @@ export const MedicalRecordsPage = () => {
                     </div>
                     <span className="pet-chip">{new Date(record.date).toLocaleDateString()}</span>
                   </div>
-                  <p className="mt-4 text-sm leading-7 text-[#6B6B6B]">
-                    {record.description || "This record was added without extra notes."}
-                  </p>
+                  {/* Parse and display diagnosis and notes separately */}
+                  {(() => {
+                    const desc = record.description || "";
+                    const diagMatch = desc.match(/Diagnosis:\s*([\s\S]*?)(?=\nNotes:|$)/);
+                    const notesMatch = desc.match(/Notes:\s*([\s\S]*?)$/);
+                    const diagnosis = diagMatch?.[1]?.trim();
+                    const notes = notesMatch?.[1]?.trim();
+
+                    if (diagnosis || notes) {
+                      return (
+                        <div className="mt-4 space-y-2">
+                          {diagnosis && (
+                            <p className="text-sm leading-relaxed text-[#6B6B6B]">
+                              <span className="font-bold text-[#2D2D2D]">Diagnosis:</span> {diagnosis}
+                            </p>
+                          )}
+                          {notes && (
+                            <p className="text-sm leading-relaxed text-[#6B6B6B]">
+                              <span className="font-bold text-[#2D2D2D]">Notes:</span> {notes}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }
+                    return desc ? (
+                      <p className="mt-4 text-sm leading-7 text-[#6B6B6B]">{desc}</p>
+                    ) : null;
+                  })()}
                   <div className="mt-4 flex flex-wrap gap-3 text-sm">
                     {record.nextDueDate ? (
                       <span className="rounded-full bg-white px-4 py-2 font-semibold text-[#8B6428] shadow-[0_12px_24px_rgba(45,45,45,0.04)]">
@@ -129,9 +155,10 @@ export const MedicalRecordsPage = () => {
                         href={record.documentUrl.startsWith("http") ? record.documentUrl : `${import.meta.env.VITE_BACKEND_URL?.replace("/api", "") || "http://localhost:5000"}${record.documentUrl}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="rounded-full bg-white px-4 py-2 font-semibold text-[#2D2D2D] shadow-[0_12px_24px_rgba(45,45,45,0.04)]"
+                        className="inline-flex items-center gap-2 rounded-full bg-[#F5A623] px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(245,166,35,0.26)] hover:bg-[#e09515] transition-colors"
                       >
-                        Download report
+                        <FileText className="h-4 w-4" />
+                        View medical report
                       </a>
                     ) : null}
                   </div>

@@ -17,6 +17,7 @@ export const ProviderProfilePage = () => {
   const [specialization, setSpecialization] = useState("");
   const [experienceYears, setExperienceYears] = useState("");
   const [qualifications, setQualifications] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
   const [workingDays, setWorkingDays] = useState([]);
   const [slotStart, setSlotStart] = useState("09:00");
   const [slotEnd, setSlotEnd] = useState("17:00");
@@ -30,6 +31,7 @@ export const ProviderProfilePage = () => {
       setSpecialization(p.specialization ?? "");
       setExperienceYears(p.experienceYears ?? "");
       setQualifications(p.qualifications ?? "");
+      setLicenseNumber(p.licenseNumber ?? "");
       setWorkingDays(p.availability?.workingDays ?? []);
       const slot = p.availability?.timeSlots?.[0];
       setSlotStart(slot?.start ?? "09:00");
@@ -52,7 +54,7 @@ export const ProviderProfilePage = () => {
     const availability = { workingDays, timeSlots: [{ start: slotStart, end: slotEnd }] };
     try {
       if (isVet) {
-        await updateUser.mutateAsync({ vetProfile: { specialization, experienceYears, qualifications, availability } });
+        await updateUser.mutateAsync({ vetProfile: { specialization, experienceYears, qualifications, licenseNumber, availability } });
       } else {
         await updateUser.mutateAsync({
           groomerProfile: {
@@ -110,6 +112,10 @@ export const ProviderProfilePage = () => {
                   <label className="pv-label">Qualifications</label>
                   <textarea value={qualifications} onChange={(e) => setQualifications(e.target.value)} className="pv-input min-h-[100px]" placeholder="BVSc, MVSc, or other credentials..." />
                 </div>
+                <div className="sm:col-span-2">
+                  <label className="pv-label">License Number</label>
+                  <input value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} className="pv-input" placeholder="e.g. NVC-2081-0012" />
+                </div>
               </>
             ) : (
               <>
@@ -126,42 +132,6 @@ export const ProviderProfilePage = () => {
           </div>
         </div>
 
-        {/* Availability */}
-        <div className="pv-section">
-          <h2 className="pv-serif mb-5 text-lg font-700">Availability</h2>
-
-          <div className="mb-5">
-            <label className="pv-label">Working Days</label>
-            <div className="flex flex-wrap gap-2">
-              {dayOptions.map((day) => {
-                const active = workingDays.includes(day);
-                return (
-                  <button key={day} type="button" onClick={() => toggleDay(day)}
-                    className="rounded-xl px-4 py-2 text-xs font-700 capitalize transition"
-                    style={{
-                      background: active ? "linear-gradient(135deg, #F5A623, #FF8C00)" : "#F1F5F9",
-                      color: active ? "#fff" : "#64748B",
-                      boxShadow: active ? "0 4px 12px rgba(245,166,35,0.25)" : "none",
-                    }}
-                  >
-                    {dayShort[day]}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="pv-label">Day Start</label>
-              <input type="time" value={slotStart} onChange={(e) => setSlotStart(e.target.value)} className="pv-input" />
-            </div>
-            <div>
-              <label className="pv-label">Day End</label>
-              <input type="time" value={slotEnd} onChange={(e) => setSlotEnd(e.target.value)} className="pv-input" />
-            </div>
-          </div>
-        </div>
 
         <button type="button" onClick={handleSave} disabled={updateUser.isPending} className="pv-btn-primary">
           <Save className="h-4 w-4" />

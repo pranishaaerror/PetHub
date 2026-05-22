@@ -147,8 +147,9 @@ function VetDetailPanel({ appointment, onClose, mutations }) {
               rows={3}
               value={diagnosis}
               onChange={(e) => setDiagnosis(e.target.value)}
-              className={inputCls}
+              className={`${inputCls} ${appointment.status === 'completed' ? 'opacity-60 cursor-not-allowed bg-gray-50' : ''}`}
               placeholder="Enter diagnosis…"
+              disabled={appointment.status === 'completed'}
             />
           </div>
 
@@ -161,8 +162,9 @@ function VetDetailPanel({ appointment, onClose, mutations }) {
               rows={4}
               value={consultationNotes}
               onChange={(e) => setConsultationNotes(e.target.value)}
-              className={inputCls}
+              className={`${inputCls} ${appointment.status === 'completed' ? 'opacity-60 cursor-not-allowed bg-gray-50' : ''}`}
               placeholder="Medications prescribed, follow-up instructions…"
+              disabled={appointment.status === 'completed'}
             />
           </div>
 
@@ -193,14 +195,21 @@ function VetDetailPanel({ appointment, onClose, mutations }) {
             <label className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#B78331]">
               <Upload className="h-3.5 w-3.5" /> Upload medical report
             </label>
-            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F0DFC0] bg-[#FFF8EE] py-5 transition hover:border-[#F5A623] hover:bg-[#FFF5E0]">
-              <Upload className="h-6 w-6 text-[#F5A623]" />
-              <p className="text-xs font-semibold text-[#B78331]">
-                {uploading ? "Uploading…" : "Click to upload PDF or image"}
-              </p>
-              <p className="text-[11px] text-gray-400">PDF, JPG, PNG · max 12MB</p>
-              <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
-            </label>
+            {appointment.status === 'completed' ? (
+              <div className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs text-gray-400">
+                <Upload className="h-4 w-4" />
+                Report upload locked — visit is completed.
+              </div>
+            ) : (
+              <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#F0DFC0] bg-[#FFF8EE] py-5 transition hover:border-[#F5A623] hover:bg-[#FFF5E0]">
+                <Upload className="h-6 w-6 text-[#F5A623]" />
+                <p className="text-xs font-semibold text-[#B78331]">
+                  {uploading ? "Uploading…" : "Click to upload PDF or image"}
+                </p>
+                <p className="text-[11px] text-gray-400">PDF, JPG, PNG · max 12MB</p>
+                <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+              </label>
+            )}
             {appointment.medicalReportUrl && (
               <a
                 href={`${BACKEND}${appointment.medicalReportUrl}`}

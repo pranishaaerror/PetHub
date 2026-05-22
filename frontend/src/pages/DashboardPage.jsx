@@ -109,9 +109,13 @@ export const DashboardPage = () => {
       (item) => new Date(item.appointmentTime) > new Date() && item.status !== "cancelled"
     ) ?? null;
   const latestVaccinationRecord =
-    records.find((item) => item.type === "vaccination" && item.nextDueDate) ??
-    records.find((item) => item.type === "vaccination") ??
-    null;
+    records.find((item) =>
+      item?.appointmentId?.serviceId?.category === "vaccination" &&
+      item?.appointmentId?.nextDueDate &&
+      new Date(item?.appointmentId?.nextDueDate) > new Date()
+    ) ??
+  records.find((item) => item?.appointmentId?.serviceId?.category === "vaccination") ??
+  null;
   const recentRecords = records.slice(0, 3);
   const featuredMeetup = meetups[0] ?? null;
 
@@ -387,8 +391,8 @@ export const DashboardPage = () => {
                 <p className="mt-2 text-sm leading-relaxed text-[#6B6B6B]">
                   {latestVaccinationRecord
                     ? `Next due ${
-                        latestVaccinationRecord.nextDueDate
-                          ? new Date(latestVaccinationRecord.nextDueDate).toLocaleDateString()
+                        latestVaccinationRecord?.appointmentId?.nextDueDate
+                          ? new Date(latestVaccinationRecord?.appointmentId?.nextDueDate).toLocaleDateString()
                           : "date to be confirmed"
                       }.`
                     : "Add a vaccination record and it'll show up here automatically."}
@@ -473,9 +477,30 @@ export const DashboardPage = () => {
                         <p className="mt-1 text-xs text-[#9B9B9B]">
                           {new Date(record.date).toLocaleDateString()}
                         </p>
-                        <p className="mt-2 text-sm leading-relaxed text-[#6B6B6B]">
-                          {record.description || "No additional notes for this record."}
-                        </p>
+                        {(() => {
+                          const desc = record.description || "";
+                          const diagMatch = desc.match(/Diagnosis:\s*([\s\S]*?)(?=\nNotes:|$)/);
+                          const notesMatch = desc.match(/Notes:\s*([\s\S]*?)$/);
+                          const diagnosis = diagMatch?.[1]?.trim();
+                          const notes = notesMatch?.[1]?.trim();
+                          if (diagnosis || notes) {
+                            return (
+                              <div className="mt-2 space-y-1.5">
+                                {diagnosis && (
+                                  <p className="text-sm leading-relaxed text-[#6B6B6B]">
+                                    <span className="font-bold text-[#1A1A1A]">Diagnosis:</span> {diagnosis}
+                                  </p>
+                                )}
+                                {notes && (
+                                  <p className="text-sm leading-relaxed text-[#6B6B6B]">
+                                    <span className="font-bold text-[#1A1A1A]">Notes:</span> {notes}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          }
+                          return <p className="mt-2 text-sm leading-relaxed text-[#6B6B6B]">{desc || "No additional notes for this record."}</p>;
+                        })()}
                       </div>
                     </div>
                   );

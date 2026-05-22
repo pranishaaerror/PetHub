@@ -119,6 +119,7 @@ const userSchema = new mongoose.Schema({
     specialization: { type: String, trim: true, default: "" },
     experienceYears: { type: Number, min: 0, default: null },
     qualifications: { type: String, trim: true, default: "" },
+    licenseNumber: { type: String, trim: true, default: "" },
     availability: {
       workingDays: {
         type: [String],

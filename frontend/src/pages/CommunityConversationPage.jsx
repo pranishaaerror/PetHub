@@ -9,6 +9,7 @@ import {
   communityConversationModes,
   findCommunityJourney,
 } from "../utils/communityJourneys";
+import { axiosInstance } from "../apis/axios";
 
 export const CommunityConversationPage = () => {
   const { mode = "warm-intro", slug } = useParams();
@@ -68,6 +69,15 @@ export const CommunityConversationPage = () => {
           petHubId: userProfile?.petHubId ?? null,
         },
       });
+
+      // If slug looks like a MongoDB ObjectId (meetup ID), also RSVP the user
+      if (slug && /^[a-f\d]{24}$/i.test(slug)) {
+        try {
+          await axiosInstance.post("/community/rsvp", { meetupId: slug });
+        } catch {
+          // RSVP failure is non-critical
+        }
+      }
 
       toast.success(response.data?.message || "Community request sent.");
       setSubmitted(true);

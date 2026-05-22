@@ -171,7 +171,11 @@ const appointmentTableSchema = new mongoose.Schema({
     reminderSent: {
         type: Boolean,
         default: false
-    }
+    },
+    nextDueDate: {
+      type: Date,
+      default: null,
+    },
 }
 ,{ timestamps: true })
 

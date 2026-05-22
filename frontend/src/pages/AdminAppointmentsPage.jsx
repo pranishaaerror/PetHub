@@ -259,7 +259,40 @@ export const AdminAppointmentsPage = () => {
   const [assignTarget, setAssignTarget] = useState(null);
 
   const appointments = appointmentsResponse?.data ?? [];
-  const vets = (usersResponse?.data ?? []).filter((u) => u.role === "veterinarian");
+  // const vets = (usersResponse?.data ?? []).filter((u) => u.role === "veterinarian");
+
+  const vets = useMemo(() => {
+    const allUsers = usersResponse?.data ?? [];
+    const allVets = allUsers.filter((u) => u.role === "veterinarian");
+
+    if (!assignTarget) return allVets;
+
+    const targetStart = new Date(assignTarget.appointmentTime).getTime();
+    const targetDuration = assignTarget.serviceId?.durationMinutes ?? 0;
+    const targetEnd = targetStart + targetDuration * 60 * 1000;
+
+    const busyVetIds = new Set(
+      appointments
+        .filter((appt) => {
+          if (appt.status !== "confirmed") return false;
+          if (appt._id === assignTarget._id) return false;
+          if (!appt.veterinarianId) return false;
+
+          const apptStart = new Date(appt.appointmentTime).getTime();
+          const apptDuration = appt.serviceId?.durationMinutes ?? 0;
+          const apptEnd = apptStart + apptDuration * 60 * 1000;
+
+          return targetStart < apptEnd && apptStart < targetEnd;
+        })
+        .map((appt) =>
+          typeof appt.veterinarianId === "object"
+            ? appt.veterinarianId._id
+            : appt.veterinarianId
+        )
+    );
+
+    return allVets.filter((v) => !busyVetIds.has(v._id));
+  }, [usersResponse?.data, appointments, assignTarget]);
 
   const statusCounts = useMemo(
     () =>
@@ -478,7 +511,7 @@ export const AdminAppointmentsPage = () => {
                   {/* Actions */}
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-1">
-                      {appointment.status === 'confirmed' && (
+                      {appointment.status === 'confirmed' && appointment.serviceId?.requiresVet && (
                         <button
                           onClick={() => setAssignTarget(appointment)}
                           className="flex h-7 w-7 items-center justify-center rounded-lg text-[#F5A623] hover:bg-[#FFF8EE] transition-colors"

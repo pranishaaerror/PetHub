@@ -203,17 +203,33 @@ router.patch("/vet/appointments/:id/consultation", verifyToken, requireRole("vet
       return res.status(403).json({ message: "Only the assigned veterinarian can update this visit." });
     }
 
+    if (apt.status === "completed") {
+      return res.status(400).json({ message: "This visit is already completed and cannot be modified." });
+    }
+
     const { diagnosis, consultationNotes, status } = req.body;
 
     if (diagnosis !== undefined) apt.diagnosis = String(diagnosis).trim();
     if (consultationNotes !== undefined) apt.consultationNotes = String(consultationNotes).trim();
-    if (status === "completed") apt.status = "completed";
+    if (status === "completed") {
+      apt.status = "completed";
+      if (apt.serviceId?.category === "vaccination") {
+        apt.nextDueDate = new Date(new Date(apt.appointmentTime).setMonth(new Date(apt.appointmentTime).getMonth() + 3));
+      }
+    }
 
     await apt.save();
 
     // Auto-create or update a MedicalRecord so it appears in the user's medical history
-    const petId = apt.petId?._id ?? apt.petId;
+    let petId = apt.petId?._id ?? apt.petId ?? null;
     const ownerId = apt.userId?._id ?? apt.userId;
+
+    // Fallback: find the owner's primary pet if appointment has no petId
+    if (!petId && ownerId) {
+      const primaryPet = await Pet.findOne({ userId: ownerId }).sort({ isPrimary: -1, createdAt: 1 });
+      if (primaryPet) petId = primaryPet._id;
+    }
+
     if (petId && ownerId && (apt.diagnosis || apt.consultationNotes)) {
       const title = apt.serviceId?.serviceName
         ? `${apt.serviceId.serviceName} — Consultation`
@@ -235,6 +251,7 @@ router.patch("/vet/appointments/:id/consultation", verifyToken, requireRole("vet
           title,
           description,
           date: apt.appointmentTime ?? new Date(),
+          ...(apt.medicalReportUrl ? { documentUrl: apt.medicalReportUrl } : {}),
         },
         { upsert: true, new: true, runValidators: true }
       );
@@ -272,6 +289,10 @@ router.post(
         return res.status(403).json({ message: "Only the assigned veterinarian can upload reports." });
       }
 
+      if (apt.status === "completed") {
+        return res.status(400).json({ message: "This visit is already completed. Reports cannot be changed." });
+      }
+
       if (!req.file) {
         return res.status(400).json({ message: "A report file is required." });
       }
@@ -280,28 +301,39 @@ router.post(
       await apt.save();
 
       // Also attach the report URL to the MedicalRecord for this appointment
-      const petId = apt.petId?._id ?? apt.petId;
+      let petId = apt.petId?._id ?? apt.petId ?? null;
       const ownerId = apt.userId?._id ?? apt.userId;
-      if (petId && ownerId) {
+
+      // Fallback: find the owner's primary pet if appointment has no petId
+      if (!petId && ownerId) {
+        const primaryPet = await Pet.findOne({ userId: ownerId }).sort({ isPrimary: -1, createdAt: 1 });
+        if (primaryPet) petId = primaryPet._id;
+      }
+
+      if (ownerId) {
         const title = apt.serviceId?.serviceName
-          ? `${apt.serviceId.serviceName} — Report`
+          ? `${apt.serviceId.serviceName} — Consultation`
           : "Medical Report";
-        await MedicalRecord.findOneAndUpdate(
-          { appointmentId: apt._id },
-          {
-            $set: {
-              userId: ownerId,
-              petId,
-              veterinarianId: req.dbUser._id,
-              appointmentId: apt._id,
-              type: "consultation",
-              title,
-              date: apt.appointmentTime ?? new Date(),
-              documentUrl: apt.medicalReportUrl,
-            },
-          },
-          { upsert: true, new: true, runValidators: true }
-        );
+        const updateData = {
+          userId: ownerId,
+          veterinarianId: req.dbUser._id,
+          appointmentId: apt._id,
+          type: "consultation",
+          title,
+          date: apt.appointmentTime ?? new Date(),
+          documentUrl: apt.medicalReportUrl,
+        };
+        if (petId) updateData.petId = petId;
+
+        // Try to find existing record by appointmentId first, then by userId+vet
+        const existingRecord = await MedicalRecord.findOne({ appointmentId: apt._id });
+        if (existingRecord) {
+          existingRecord.documentUrl = apt.medicalReportUrl;
+          if (petId && !existingRecord.petId) existingRecord.petId = petId;
+          await existingRecord.save();
+        } else if (petId) {
+          await MedicalRecord.create(updateData);
+        }
       }
 
       const updated = await loadAppointment(apt._id);

@@ -35,6 +35,20 @@ router.get("/meetups", async (req, res) => {
   }
 });
 
+router.get("/meetups/:meetupId/attendees", verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can view attendees." });
+    }
+    const meetup = await CommunityMeetup.findById(req.params.meetupId)
+      .populate("attendees", "fullName displayName email petHubId phoneNumber contactNumber");
+    if (!meetup) return res.status(404).json({ message: "Meetup not found." });
+    res.json({ attendees: meetup.attendees, count: meetup.attendees.length });
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+});
+
 router.post("/rsvp", verifyToken, async (req, res) => {
   try {
     const user = await getCurrentDatabaseUser(req);

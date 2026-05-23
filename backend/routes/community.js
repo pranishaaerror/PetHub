@@ -8,6 +8,10 @@ const router = express.Router();
 
 router.get("/posts", async (_req, res) => {
   try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    // Auto-delete past events
+    await CommunityMeetup.deleteMany({ eventDate: { $lt: today, $ne: null } });
     const posts = await CommunityMeetup.find().sort({ createdAt: -1 });
     res.json(posts);
   } catch (error) {
@@ -21,16 +25,15 @@ router.get("/meetups", async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Auto-delete past events silently (both by eventDate and old null-eventDate events)
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    CommunityMeetup.deleteMany({
+    // Auto-delete past events — both those with eventDate set and old ones without eventDate
+    const cutoff = new Date(today);
+    cutoff.setDate(cutoff.getDate() - 1); // yesterday
+    await CommunityMeetup.deleteMany({
       $or: [
         { eventDate: { $lt: today, $ne: null } },
-        // Also delete old events without eventDate that were created more than 2 days ago
-        { eventDate: null, createdAt: { $lt: yesterday } },
+        { eventDate: null, createdAt: { $lt: cutoff } },
       ],
-    }).catch(() => {});
+    });
 
     // Filter: only show events from today onwards
     const dateFilter = { eventDate: { $gte: today } };

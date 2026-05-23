@@ -2,19 +2,10 @@ import express from "express";
 import Appointment from "../models/AppointmentTable.js";
 import User from "../models/User.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
-import {
-  buildEsewaFormData,
-  decodeEsewaData,
-  getEsewaConfig,
-  verifyEsewaResponseSignature,
-  verifyEsewaTransactionStatus,
-} from "../services/esewaService.js";
+import { initiateKhaltiPayment, verifyKhaltiPayment } from "../services/khaltiService.js";
 
 const router = express.Router();
 const FRONTEND_URL = (process.env.FRONTEND_URL ?? "http://localhost:5173").trim();
-
-const buildBackendBaseUrl = (req) =>
-  (process.env.BACKEND_PUBLIC_URL ?? `${req.protocol}://${req.get("host")}`).trim();
 
 const buildFrontendRedirectUrl = ({ paymentStatus, appointmentId, bookingId, transactionCode, amount }) => {
   const redirectUrl = new URL("/service-booking", FRONTEND_URL);
@@ -26,8 +17,8 @@ const buildFrontendRedirectUrl = ({ paymentStatus, appointmentId, bookingId, tra
   return redirectUrl.toString();
 };
 
-router.post("/esewa/initiate", verifyToken, async (req, res) => {
-  try {
+router.post("/khalti/initiate", verifyToken, async (req, res) => {
+   try {
     const { appointmentId } = req.body;
 
     if (!appointmentId) {
@@ -40,9 +31,10 @@ router.post("/esewa/initiate", verifyToken, async (req, res) => {
       return res.status(404).json({ message: "Appointment not found." });
     }
 
-    if (req.user.role !== "admin") {
-      const user = await User.findOne({ uid: req.user.id });
+    // Fetch the user to get their name/email/phone for Khalti
+    const user = await User.findOne({ uid: req.user.id });
 
+    if (req.user.role !== "admin") {
       if (!user || String(user._id) !== String(appointment.userId)) {
         return res.status(403).json({ message: "You cannot pay for this appointment." });
       }
@@ -52,38 +44,40 @@ router.post("/esewa/initiate", verifyToken, async (req, res) => {
       return res.status(409).json({ message: "This appointment is already paid." });
     }
 
-    const transactionUuid = `${appointment.bookingId}-${Date.now()}`;
-    const backendBaseUrl = buildBackendBaseUrl(req);
+    const amountNPR = Number(appointment.payment?.amount ?? appointment.serviceId?.price ?? 0);
+    const amountPaisa = amountNPR * 100;
 
-    // Use frontend URL as success/failure redirect — eSewa redirects the user's browser
-    // The frontend then calls /api/payments/esewa/verify to complete the flow
-    const successUrl = `${FRONTEND_URL}/service-booking?payment=pending&appointmentId=${appointment._id}`;
-    const failureUrl = `${FRONTEND_URL}/service-booking?payment=cancelled&appointmentId=${appointment._id}&bookingId=${appointment.bookingId}`;
-    const amount = Number(appointment.payment?.amount ?? appointment.serviceId?.price ?? 0);
+    const returnUrl = `${FRONTEND_URL}/services?payment=pending&appointmentId=${appointment._id}`;
 
-    const formData = buildEsewaFormData({
-      amount,
-      transactionUuid,
-      successUrl,
-      failureUrl,
+    const khaltiResponse = await initiateKhaltiPayment({
+      amount: amountPaisa,
+      purchaseOrderId: appointment.bookingId ?? String(appointment._id),
+      purchaseOrderName: appointment.serviceId?.serviceName ?? "PetHub Service",
+      returnUrl,
+      websiteUrl: FRONTEND_URL,
+      customerInfo: { 
+        name: user?.displayName ?? user?.name ?? "Customer",
+        email: user?.email ?? "",
+        phone: user?.phone ?? user?.phoneNumber ?? "",
+      },
     });
 
     appointment.payment = {
       ...(appointment.payment?.toObject?.() ?? appointment.payment ?? {}),
-      provider: "esewa",
+      provider: "khalti",
       currency: "NPR",
-      amount,
-      status: "initiated",
-      transactionUuid,
+      amount: amountNPR,
+      status: "unpaid",
+      transactionUuid: khaltiResponse.pidx,
       initiatedAt: new Date(),
-      providerPayload: formData,
+      providerPayload: khaltiResponse,
     };
     await appointment.save();
 
     res.json({
-      message: "eSewa sandbox payment initialized.",
-      formAction: getEsewaConfig().formUrl,
-      formData,
+      message: "Khalti sandbox payment initialized.",
+      paymentUrl: khaltiResponse.payment_url,
+      pidx: khaltiResponse.pidx,
       appointment: {
         _id: appointment._id,
         bookingId: appointment.bookingId,
@@ -91,169 +85,68 @@ router.post("/esewa/initiate", verifyToken, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("eSewa initiation failed:", error);
-    res.status(500).json({ message: error.message || "Failed to initialize eSewa payment." });
+    console.error("Khalti initiation failed:", error);
+    res.status(500).json({ message: error.message || "Failed to initialize Khalti payment." });
   }
 });
 
-router.get("/esewa/success/:appointmentId", async (req, res) => {
+router.post("/khalti/verify", verifyToken, async (req, res) => {
   try {
-    const encodedData = req.query.data ?? req.body?.data;
-    const appointment = await Appointment.findById(req.params.appointmentId);
+    const { pidx, appointmentId } = req.body;
 
+    if (!pidx || !appointmentId) {
+      return res.status(400).json({ message: "pidx and appointmentId are required." });
+    }
+
+    const appointment = await Appointment.findById(appointmentId);
     if (!appointment) {
-      return res.redirect(buildFrontendRedirectUrl({ paymentStatus: "missing" }));
+      return res.status(404).json({ message: "Appointment not found." });
     }
 
-    if (!encodedData) {
+    const lookup = await verifyKhaltiPayment(pidx);
+    console.log(lookup)
+
+    if (lookup.status !== "Completed") {
       appointment.payment = {
         ...(appointment.payment?.toObject?.() ?? appointment.payment ?? {}),
-        provider: "esewa",
+        provider: "khalti",
         currency: "NPR",
         amount: Number(appointment.payment?.amount ?? 0),
+        status: "failed",
+        providerResponse: lookup,
+        lastFailureAt: new Date(),
       };
-      appointment.payment.status = "failed";
-      appointment.payment.lastFailureAt = new Date();
       await appointment.save();
-      return res.redirect(
-        buildFrontendRedirectUrl({
-          paymentStatus: "failed",
-          appointmentId: appointment._id,
-          bookingId: appointment.bookingId,
-        })
-      );
+      return res.status(400).json({ message: `Payment not completed. Status: ${lookup.status}`, lookup });
     }
 
-    const responsePayload = decodeEsewaData(encodedData);
-
-    // For sandbox (EPAYTEST), skip signature verification and rely on status API
-    // For production, signature verification should be enforced
-    const isSandbox = (process.env.ESEWA_PRODUCT_CODE ?? "EPAYTEST").trim() === "EPAYTEST";
-    const signatureValid = isSandbox ? true : verifyEsewaResponseSignature(responsePayload);
-
-    if (!signatureValid) {
-      appointment.payment = {
-        ...(appointment.payment?.toObject?.() ?? appointment.payment ?? {}),
-        provider: "esewa",
-        currency: "NPR",
-        amount: Number(appointment.payment?.amount ?? 0),
-      };
-      appointment.payment.status = "failed";
-      appointment.payment.providerResponse = responsePayload;
-      appointment.payment.lastFailureAt = new Date();
-      await appointment.save();
-      return res.redirect(
-        buildFrontendRedirectUrl({
-          paymentStatus: "invalid-signature",
-          appointmentId: appointment._id,
-          bookingId: appointment.bookingId,
-        })
-      );
-    }
-
-    // Verify with eSewa status API — this is the authoritative check
-    let statusResult = null;
-    try {
-      statusResult = await verifyEsewaTransactionStatus({
-        transactionUuid: responsePayload.transaction_uuid,
-        totalAmount: responsePayload.total_amount,
-      });
-    } catch (verifyError) {
-      console.error("eSewa status API failed, falling back to response payload:", verifyError.message);
-    }
-
-    // Accept COMPLETE from status API, or COMPLETE from response payload as fallback
-    const status = statusResult?.status ?? responsePayload.status;
-    const transactionCode =
-      responsePayload.transaction_code ?? statusResult?.refId ?? statusResult?.ref_id ?? null;
-
-    if (status !== "COMPLETE") {
-      appointment.payment = {
-        ...(appointment.payment?.toObject?.() ?? appointment.payment ?? {}),
-        provider: "esewa",
-        currency: "NPR",
-        amount: Number(appointment.payment?.amount ?? 0),
-      };
-      appointment.payment.status = "failed";
-      appointment.payment.providerResponse = {
-        responsePayload,
-        statusResult,
-      };
-      appointment.payment.lastFailureAt = new Date();
-      await appointment.save();
-      return res.redirect(
-        buildFrontendRedirectUrl({
-          paymentStatus: "failed",
-          appointmentId: appointment._id,
-          bookingId: appointment.bookingId,
-        })
-      );
-    }
-
-    appointment.payment = {
-      ...(appointment.payment?.toObject?.() ?? appointment.payment ?? {}),
-      provider: "esewa",
-      currency: "NPR",
-      amount: Number(
-        appointment.payment?.amount ?? responsePayload.total_amount ?? statusResult?.total_amount ?? 0
-      ),
-    };
     appointment.status = "confirmed";
-    appointment.payment.status = "paid";
-    appointment.payment.paidAt = new Date();
-    appointment.payment.transactionUuid =
-      responsePayload.transaction_uuid ?? appointment.payment.transactionUuid ?? null;
-    appointment.payment.transactionCode = responsePayload.transaction_code ?? transactionCode;
-    appointment.payment.referenceId = statusResult?.refId ?? statusResult?.ref_id ?? null;
-    appointment.payment.providerResponse = {
-      responsePayload,
-      statusResult,
-    };
-    await appointment.save();
-
-    res.redirect(
-      buildFrontendRedirectUrl({
-        paymentStatus: "success",
-        appointmentId: appointment._id,
-        bookingId: appointment.bookingId,
-        transactionCode: appointment.payment.transactionCode,
-        amount: String(appointment.payment.amount ?? ""),
-      })
-    );
-  } catch (error) {
-    console.error("eSewa success callback failed:", error);
-    res.redirect(buildFrontendRedirectUrl({ paymentStatus: "failed" }));
-  }
-});
-
-router.get("/esewa/failure/:appointmentId", async (req, res) => {
-  try {
-    const appointment = await Appointment.findById(req.params.appointmentId);
-
-    if (!appointment) {
-      return res.redirect(buildFrontendRedirectUrl({ paymentStatus: "failed" }));
-    }
-
     appointment.payment = {
       ...(appointment.payment?.toObject?.() ?? appointment.payment ?? {}),
-      provider: "esewa",
+      provider: "khalti",
       currency: "NPR",
-      amount: Number(appointment.payment?.amount ?? 0),
+      amount: Number(lookup.total_amount / 100 ?? appointment.payment?.amount ?? 0),
+      status: "paid",
+      paidAt: new Date(),
+      transactionUuid: pidx,
+      transactionCode: lookup.transaction_id ?? pidx,
+      referenceId: lookup.transaction_id ?? null,
+      providerResponse: lookup,
     };
-    appointment.payment.status = "cancelled";
-    appointment.payment.lastFailureAt = new Date();
     await appointment.save();
 
-    res.redirect(
-      buildFrontendRedirectUrl({
-        paymentStatus: "cancelled",
-        appointmentId: appointment._id,
+    res.json({
+      message: "Payment verified and confirmed.",
+      appointment: {
+        _id: appointment._id,
         bookingId: appointment.bookingId,
-      })
-    );
+        payment: appointment.payment,
+        status: appointment.status,
+      },
+    });
   } catch (error) {
-    console.error("eSewa failure callback failed:", error);
-    res.redirect(buildFrontendRedirectUrl({ paymentStatus: "failed" }));
+    console.error("Khalti verification failed:", error);
+    res.status(500).json({ message: error.message || "Failed to verify Khalti payment." });
   }
 });
 

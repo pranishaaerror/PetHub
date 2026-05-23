@@ -78,7 +78,7 @@ router.post("/", verifyToken, async (req, res) => {
       vetAcceptance: isGrooming ? "na" : "pending",
       groomerAcceptance: isGrooming ? "pending" : "na",
       payment: {
-        provider: "esewa",
+        provider: "khalti",
         currency: "NPR",
         amount: Number(service.price),
         status: "unpaid",

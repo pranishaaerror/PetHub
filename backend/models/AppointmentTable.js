@@ -108,8 +108,8 @@ const appointmentTableSchema = new mongoose.Schema({
     payment: {
         provider: {
             type: String,
-            enum: ["esewa"],
-            default: "esewa",
+            enum: ["khalti"],
+            default: "khalti",
             required: true,
         },
         currency: {

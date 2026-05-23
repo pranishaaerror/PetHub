@@ -12,7 +12,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useCreateAppointment, useAppointment } from "../apis/appointment/hooks";
 import { useMyPets } from "../apis/pets/hooks";
 import { useServices } from "../apis/services/hooks";
-import { useInitiateEsewaPayment } from "../apis/payments/hooks";
+import { useInitiateKhaltiPayment, useVerifyKhaltiPayment } from "../apis/payments/hooks";
 import { useAuth } from "../context/AuthContext";
 
 /* ── Payment result modal ── */
@@ -138,9 +138,13 @@ export const ServiceBookingPage = () => {
   const { data: servicesResponse }     = useServices();
   const { data: appointmentsResponse, isLoading: isAppointmentsLoading } = useAppointment();
   const { mutateAsync: createAppointment,    isPending }        = useCreateAppointment();
-  const { mutateAsync: initiateEsewaPayment, isPending: isEsewaPending } = useInitiateEsewaPayment();
+  const { mutateAsync: initiateKhaltiPayment } = useInitiateKhaltiPayment();
+  const { mutateAsync: verifyKhaltiPayment } = useVerifyKhaltiPayment();
   const handledPaymentStatusRef = useRef("");
   const [paymentResult, setPaymentResult] = useState(null);
+
+  // ── Track which specific appointment is being paid (null = none) ──
+  const [khaltiPendingId, setKhaltiPendingId] = useState(null);
 
   const [selectedDate, setSelectedDate] = useState(() => {
     const d = new Date(); d.setDate(d.getDate() + 1);
@@ -183,13 +187,56 @@ export const ServiceBookingPage = () => {
 
   useEffect(() => {
     const params        = new URLSearchParams(location.search);
+    const pidx          = params.get("pidx");
+
+    if (pidx && !handledPaymentStatusRef.current.startsWith("khalti-" + pidx)) {
+      handledPaymentStatusRef.current = "khalti-" + pidx;
+      const appointmentId = params.get("appointmentId") ?? "";
+      const khaltiStatus  = params.get("status") ?? "";
+
+      if (khaltiStatus === "Completed" && appointmentId) {
+        console.log("Verifying Khalti payment for pidx:", pidx, "and appointmentId:", appointmentId);
+        verifyKhaltiPayment({ pidx, appointmentId })
+          .then((res) => {
+            const apt = res.data?.appointment;
+            void queryClient.invalidateQueries({ queryKey: ["get-appointment"] });
+            void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+            setLatestBookingId(apt?.bookingId ?? "");
+            setLatestAppointmentId(apt?._id ?? appointmentId);
+            setPaymentResult({
+              status: "success",
+              bookingId: apt?.bookingId ?? "",
+              transactionCode: apt?.payment?.transactionCode ?? pidx,
+              amount: apt?.payment?.amount ? String(apt.payment.amount) : null,
+            });
+          })
+          .catch((err) => {
+            setPaymentResult({ status: "failed", message: err.response?.data?.message || "Payment verification failed." });
+          })
+          .finally(() => {
+            navigate("/services", { replace: true });
+          });
+      } else {
+                console.log("Verifying Khalti payment for pidx2:", pidx, "and appointmentId:", appointmentId);
+        const messages = {
+          User_canceled: "Payment was cancelled by the user.",
+          Expired:       "Payment session expired. Please try again.",
+          failed:        "Payment failed. Please try again.",
+        };
+        setPaymentResult({ status: "failed", message: messages[khaltiStatus] ?? "Payment could not be completed." });
+        navigate("/services", { replace: true });
+      }
+      return;
+    }
+
     const paymentStatus = params.get("payment");
     if (!paymentStatus || handledPaymentStatusRef.current === paymentStatus + location.search) return;
     handledPaymentStatusRef.current = paymentStatus + location.search;
 
-    const bookingId      = params.get("bookingId") ?? "";
-    const appointmentId  = params.get("appointmentId") ?? "";
+    const bookingId       = params.get("bookingId") ?? "";
+    const appointmentId   = params.get("appointmentId") ?? "";
     const transactionCode = params.get("transactionCode") ?? "";
+                console.log("Verifying Khalti payment for pidx3:", pidx, "and appointmentId:", appointmentId);
 
     if (paymentStatus === "success") {
       void queryClient.invalidateQueries({ queryKey: ["get-appointment"] });
@@ -197,19 +244,17 @@ export const ServiceBookingPage = () => {
       setLatestBookingId(bookingId);
       setLatestAppointmentId(appointmentId);
       setPaymentResult({ status: "success", bookingId, transactionCode, amount: null });
-    } else {
+    } else if (paymentStatus !== "pending") {
       const messages = {
-        cancelled:         "Payment was cancelled. You can try again.",
-        "invalid-signature": "Payment verification failed. Please try again.",
-        failed:            "Payment failed. Please try again.",
-        missing:           "Payment data was missing. Please try again.",
+        cancelled: "Payment was cancelled. You can try again.",
+        failed:    "Payment failed. Please try again.",
+        missing:   "Payment data was missing. Please try again.",
       };
       setPaymentResult({ status: "failed", message: messages[paymentStatus] ?? "Payment could not be completed." });
     }
 
-    // Clean the URL so refreshing doesn't re-trigger
     navigate("/services", { replace: true });
-  }, [location.search, queryClient, navigate]);
+  }, [location.search, queryClient, navigate, verifyKhaltiPayment]);
 
   const selectedService = serviceCards.find((s) => (s._id ?? s.key) === selectedServiceKey);
   const calendarDays    = getCalendarDays(selectedDate);
@@ -240,25 +285,21 @@ export const ServiceBookingPage = () => {
     } catch (error) { toast.error(error.response?.data?.message || error.message); }
   };
 
-  const submitEsewaForm = (action, fields) => {
-    const form = document.createElement("form");
-    form.method = "POST"; form.action = action;
-    Object.entries(fields).forEach(([k, v]) => {
-      const input = document.createElement("input");
-      input.type = "hidden"; input.name = k; input.value = String(v ?? "");
-      form.appendChild(input);
-    });
-    document.body.appendChild(form); form.submit(); document.body.removeChild(form);
-  };
-
-  const handleEsewaPayment = async (appointmentId) => {
+  // ── Fixed: track pending state per appointmentId, not globally ──
+  const handleKhaltiPayment = async (appointmentId) => {
+    if (khaltiPendingId) return; // already processing one
+    setKhaltiPendingId(appointmentId);
     try {
-      const response = await initiateEsewaPayment({ appointmentId });
-      const { formAction, formData, appointment } = response.data;
+      const response = await initiateKhaltiPayment({ appointmentId });
+      const { paymentUrl, appointment } = response.data;
       setLatestAppointmentId(appointment?._id ?? appointmentId);
       setLatestBookingId(appointment?.bookingId ?? latestBookingId);
-      submitEsewaForm(formAction, formData);
-    } catch (error) { toast.error(error.response?.data?.message || error.message); }
+      window.location.href = paymentUrl;
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+      setKhaltiPendingId(null);
+    }
+    // Note: don't clear khaltiPendingId on success — page is redirecting away
   };
 
   return (
@@ -268,7 +309,6 @@ export const ServiceBookingPage = () => {
         result={paymentResult}
         onClose={() => {
           setPaymentResult(null);
-          // Refresh appointments list after closing success modal
           void queryClient.invalidateQueries({ queryKey: ["get-appointment"] });
         }}
       />
@@ -484,7 +524,6 @@ export const ServiceBookingPage = () => {
               </div>
             </div>
 
-            {/* Account meta */}
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl bg-[#FFF8EE] px-4 py-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A97C3A]">PetHub ID</p>
@@ -498,10 +537,8 @@ export const ServiceBookingPage = () => {
           </div>
         </div>
 
-        {/* RIGHT — Summary + Confirm */}
         <div className="space-y-6">
 
-          {/* Booking summary */}
           <div className="rounded-[28px] bg-white shadow-[0_6px_28px_rgba(45,45,45,0.07)] p-5 sm:p-6">
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A97C3A]">Booking summary</span>
             <div className="mt-5 space-y-2.5">
@@ -519,14 +556,13 @@ export const ServiceBookingPage = () => {
               ))}
             </div>
 
-            {/* eSewa info */}
             <div className="mt-5 rounded-2xl bg-[linear-gradient(140deg,#2D2D2D,#4A3828)] p-4 text-white">
               <div className="flex items-center gap-2.5">
                 <ShieldPlus className="h-5 w-5 text-[#FFB347] shrink-0" />
-                <p className="text-sm font-semibold">NPR only · eSewa sandbox</p>
+                <p className="text-sm font-semibold">NPR only · Khalti sandbox</p>
               </div>
               <p className="mt-2 text-xs leading-relaxed text-white/70">
-                PetHub reserves the booking in MongoDB, then you can pay in Nepali rupees through the eSewa sandbox using EPAYTEST. Admin can confirm or complete the booking and the update will appear in your bookings list.
+                PetHub reserves the booking, then you pay securely in NPR via Khalti sandbox. Use test number <strong>9800000005</strong> and MPIN <strong>1111</strong>. Admin will confirm your booking after payment.
               </p>
             </div>
 
@@ -541,24 +577,23 @@ export const ServiceBookingPage = () => {
               {isPending ? <Clock3 className="h-4 w-4" /> : <Check className="h-4 w-4" />}
             </button>
 
-            {/* eSewa payment card (shows after booking) */}
             {latestAppointmentId && (
               <div className="mt-4 rounded-2xl border border-[#E8D9C4] bg-[#FFF8EE] p-4">
                 <div className="flex items-center gap-2.5">
-                  <WalletCards className="h-5 w-5 text-[#F5A623]" />
-                  <p className="text-sm font-semibold text-[#2D2D2D]">Pay with eSewa sandbox</p>
+                  <WalletCards className="h-5 w-5 text-[#5C2D91]" />
+                  <p className="text-sm font-semibold text-[#2D2D2D]">Pay with Khalti sandbox</p>
                 </div>
                 <p className="mt-2 text-xs leading-relaxed text-[#6B6B6B]">
-                  Test with eSewa ID <strong>9806800001</strong>, password <strong>Nepal@123</strong>, MPIN <strong>1122</strong>, token <strong>123456</strong>. Sandbox only, billed in NPR.
+                  Test with Khalti number <strong>9800000005</strong> and MPIN <strong>1111</strong>. Sandbox only, billed in NPR.
                 </p>
                 <button
                   type="button"
-                  onClick={() => handleEsewaPayment(latestAppointmentId)}
-                  disabled={isEsewaPending}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[#E8D9C4] bg-white px-6 py-3 text-sm font-semibold text-[#5B4A36] hover:bg-[#FFF8EE] transition-colors disabled:opacity-50 mt-4 w-full"
+                  onClick={() => handleKhaltiPayment(latestAppointmentId)}
+                  disabled={khaltiPendingId !== null}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[#D8C4F0] bg-white px-6 py-3 text-sm font-semibold text-[#5C2D91] hover:bg-[#F5EEFF] transition-colors disabled:opacity-50 mt-4 w-full"
                 >
                   <WalletCards className="h-4 w-4" />
-                  {isEsewaPending ? "Opening eSewa…" : "Pay with eSewa sandbox"}
+                  {khaltiPendingId === latestAppointmentId ? "Redirecting to Khalti…" : "Pay with Khalti sandbox"}
                 </button>
               </div>
             )}
@@ -566,7 +601,6 @@ export const ServiceBookingPage = () => {
         </div>
       </div>
 
-      {/* ── UPCOMING APPOINTMENTS ── */}
       <div className="rounded-[28px] bg-white shadow-[0_6px_28px_rgba(45,45,45,0.07)] p-5 sm:p-7">
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -584,6 +618,8 @@ export const ServiceBookingPage = () => {
           ) : upcomingAppointments.length ? (
             upcomingAppointments.map((apt) => {
               const s = bookingStatusConfig[apt.status] ?? { bg: "#F5F5F5", text: "#555", dot: "#999" };
+              const isThisCardPending = khaltiPendingId === apt._id;
+              const isAnyPending = khaltiPendingId !== null;
               return (
                 <article key={apt._id} className="rounded-[24px] bg-white shadow-[0_4px_18px_rgba(45,45,45,0.07)] overflow-hidden">
                   <div className="h-1 w-full" style={{ background: s.dot }} />
@@ -615,12 +651,12 @@ export const ServiceBookingPage = () => {
                       {apt.payment?.status !== "paid" ? (
                         <button
                           type="button"
-                          onClick={() => handleEsewaPayment(apt._id)}
-                          disabled={isEsewaPending}
-                          className="inline-flex items-center justify-center gap-2 rounded-full border border-[#E8D9C4] bg-white px-6 py-3 text-sm font-semibold text-[#5B4A36] hover:bg-[#FFF8EE] transition-colors disabled:opacity-50 w-full text-xs py-2.5"
+                          onClick={() => handleKhaltiPayment(apt._id)}
+                          disabled={isAnyPending}
+                          className="inline-flex items-center justify-center gap-2 rounded-full border border-[#D8C4F0] bg-white px-6 py-3 text-sm font-semibold text-[#5C2D91] hover:bg-[#F5EEFF] transition-colors disabled:opacity-50 w-full text-xs py-2.5"
                         >
                           <WalletCards className="h-3.5 w-3.5" />
-                          {isEsewaPending ? "Opening…" : "Pay with eSewa"}
+                          {isThisCardPending ? "Redirecting…" : "Pay with Khalti"}
                         </button>
                       ) : (
                         <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#E8F5E9] py-2.5 text-xs font-semibold text-[#2E7D32]">

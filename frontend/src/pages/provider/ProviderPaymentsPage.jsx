@@ -31,7 +31,7 @@ export const ProviderPaymentsPage = () => {
       <div className="pv-card p-7">
         <span className="pv-chip"><TrendingUp className="h-3 w-3" /> Payments</span>
         <h1 className="pv-serif mt-4 text-3xl font-700">Completed, Paid Visits</h1>
-        <p className="mt-2 text-sm text-[#64748B]">Totals reflect bookings marked complete with confirmed eSewa payments.</p>
+        <p className="mt-2 text-sm text-[#64748B]">Totals reflect bookings marked complete with confirmed Khalti payments.</p>
       </div>
 
       {/* Stats */}

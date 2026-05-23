@@ -1,8 +1,14 @@
 import { useMutation } from "@tanstack/react-query";
-import { initiateEsewaPayment } from "./apis";
+import { initiateKhaltiPayment, verifyKhaltiPayment } from "./apis";
 
-export const useInitiateEsewaPayment = () =>
+export const useInitiateKhaltiPayment = () =>
   useMutation({
-    mutationFn: initiateEsewaPayment,
-    mutationKey: ["initiate-esewa-payment"],
+    mutationFn: initiateKhaltiPayment,
+    mutationKey: ["initiate-khalti-payment"],
+  });
+
+export const useVerifyKhaltiPayment = () =>
+  useMutation({
+    mutationFn: verifyKhaltiPayment,
+    mutationKey: ["verify-khalti-payment"],
   });

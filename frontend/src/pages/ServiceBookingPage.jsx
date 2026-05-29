@@ -143,6 +143,9 @@ export const ServiceBookingPage = () => {
   const handledPaymentStatusRef = useRef("");
   const [paymentResult, setPaymentResult] = useState(null);
 
+  // ── Step-by-step booking flow: 1 = pick service, 2 = pick date/time, 3 = form + payment ──
+  const [bookingStep, setBookingStep] = useState(1);
+
   // ── Track which specific appointment is being paid (null = none) ──
   const [khaltiPendingId, setKhaltiPendingId] = useState(null);
 
@@ -171,9 +174,7 @@ export const ServiceBookingPage = () => {
     [appointments]
   );
 
-  useEffect(() => {
-    if (!selectedServiceKey && serviceCards[0]) setSelectedServiceKey(serviceCards[0]._id ?? serviceCards[0].key);
-  }, [selectedServiceKey, serviceCards]);
+  // No auto-select — user must click a service card to proceed to step 2
 
   useEffect(() => {
     setBookingForm((c) => ({
@@ -367,9 +368,27 @@ export const ServiceBookingPage = () => {
                     <p className={`mt-4 text-base font-bold ${isSelected ? "text-white" : "text-[#2D2D2D]"}`}>{service.serviceName}</p>
                     <p className={`mt-1.5 text-xs leading-relaxed ${isSelected ? "text-white/80" : "text-[#6B6B6B]"}`}>{service.description}</p>
                     <div className="mt-4 flex items-center justify-between">
-                      <p className={`text-xl font-bold ${isSelected ? "text-white" : "text-[#2D2D2D]"}`}>
-                        {formatNpr(service.price)}
-                      </p>
+                      <div>
+                        {service.discountPrice != null && service.discountPrice < service.price ? (
+                          <div className="flex items-baseline gap-2">
+                            <p className={`text-xl font-bold ${isSelected ? "text-white" : "text-emerald-600"}`}>
+                              {formatNpr(service.discountPrice)}
+                            </p>
+                            <p className={`text-sm line-through ${isSelected ? "text-white/60" : "text-[#9B9B9B]"}`}>
+                              {formatNpr(service.price)}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className={`text-xl font-bold ${isSelected ? "text-white" : "text-[#2D2D2D]"}`}>
+                            {formatNpr(service.price)}
+                          </p>
+                        )}
+                        {service.discountTitle && service.discountPrice != null && (
+                          <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${isSelected ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-700"}`}>
+                            {service.discountTitle}
+                          </span>
+                        )}
+                      </div>
                       <span className={`text-xs font-semibold ${isSelected ? "text-white/75" : "text-[#9B9B9B]"}`}>
                         {service.durationMinutes ?? 45} min
                       </span>
@@ -546,7 +565,11 @@ export const ServiceBookingPage = () => {
                 { label: "Service",        value: selectedService?.serviceName ?? "Choose one" },
                 { label: "Date",           value: toLocalDate(selectedDate).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) },
                 { label: "Time",           value: selectedSlot },
-                { label: "Estimated total",value: selectedService ? formatNpr(selectedService.price) : "--" },
+                { label: "Estimated total", value: selectedService
+                    ? (selectedService.discountPrice != null && selectedService.discountPrice < selectedService.price
+                        ? `${formatNpr(selectedService.discountPrice)} (was ${formatNpr(selectedService.price)})`
+                        : formatNpr(selectedService.price))
+                    : "--" },
                 { label: "Booking ID",     value: latestBookingId || "Generated on confirm" },
               ].map(({ label, value }) => (
                 <div key={label} className="flex items-center justify-between rounded-2xl bg-[#FFF8EE] px-4 py-3">

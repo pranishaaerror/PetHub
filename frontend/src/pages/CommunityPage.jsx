@@ -318,7 +318,14 @@ export const CommunityPage = () => {
                   </div>
                   <div className="mt-3 flex items-center justify-between">
                     <p className="text-xs text-[#B78331]">Host · {m.hostName}</p>
-                    <Link to={`/community/conversations/connect/${m._id}`} className="flex items-center gap-1 text-xs font-600 text-[#C87D2A] hover:text-[#A56A22]">
+                    <Link
+                      to={
+                        currentUser
+                          ? `/community/conversations/connect/${m._id}`
+                          : `/signup?redirect=${encodeURIComponent(`/community/conversations/connect/${m._id}`)}`
+                      }
+                      className="flex items-center gap-1 text-xs font-600 text-[#C87D2A] hover:text-[#A56A22]"
+                    >
                       View details <ArrowUpRight className="h-3.5 w-3.5" />
                     </Link>
                   </div>

@@ -54,6 +54,16 @@ const servicesSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    discountTitle: {
+        type: String,
+        trim: true,
+        default: "",
+    },
+    discountPrice: {
+        type: Number,
+        min: 0,
+        default: null,
+    },
    
 },{ timestamps: true });
 

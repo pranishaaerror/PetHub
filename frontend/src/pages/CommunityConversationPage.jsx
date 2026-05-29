@@ -46,11 +46,6 @@ export const CommunityConversationPage = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!form.message.trim()) {
-      toast.error("Please add a short message before sending.");
-      return;
-    }
-
     try {
       const response = await createRequest({
         type: "community-message",
@@ -58,8 +53,8 @@ export const CommunityConversationPage = () => {
         email: form.email,
         contactNumber: form.contactNumber,
         petName: form.petName,
-        title: journey?.title ?? "PetHub Warm Intro",
-        message: form.message,
+        title: journey?.title ?? "PetHub Community Join",
+        message: `${form.fullName} wants to join the community event.`,
         referenceId: slug ?? mode,
         metadata: {
           mode,
@@ -79,7 +74,7 @@ export const CommunityConversationPage = () => {
         }
       }
 
-      toast.success(response.data?.message || "Community request sent.");
+      toast.success("You've joined! See you at the event.");
       setSubmitted(true);
     } catch (error) {
       toast.error(error.response?.data?.message || error.message);
@@ -116,68 +111,76 @@ export const CommunityConversationPage = () => {
           <span className="pet-chip">Join Request</span>
           <h2 className="mt-4 text-3xl font-bold">Join our pet-loving community.</h2>
           <p className="mt-3 text-sm leading-7 text-[#6B6B6B]">
-           Connect with fellow pet parents, stay updated with community activities, and become part of a trusted network built for animal lovers.
+            Connect with fellow pet parents, stay updated with community activities, and become part of a trusted network built for animal lovers.
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-[#5B544C]">Full name</span>
-                <input
-                  type="text"
-                  value={form.fullName}
-                  onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))}
-                  className="w-full rounded-[22px] bg-[#FFF8EE] px-4 py-4 text-sm outline-none ring-2 ring-transparent transition focus:ring-[#F5C062]"
-                  required
-                />
-              </label>
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-[#5B544C]">Email</span>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-                  className="w-full rounded-[22px] bg-[#FFF8EE] px-4 py-4 text-sm outline-none ring-2 ring-transparent transition focus:ring-[#F5C062]"
-                  required
-                />
-              </label>
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-[#5B544C]">Contact number</span>
-                <input
-                  type="tel"
-                  value={form.contactNumber}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, contactNumber: event.target.value }))
-                  }
-                  className="w-full rounded-[22px] bg-[#FFF8EE] px-4 py-4 text-sm outline-none ring-2 ring-transparent transition focus:ring-[#F5C062]"
-                  required
-                />
-              </label>
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-[#5B544C]">Pet name</span>
-                <input
-                  type="text"
-                  value={form.petName}
-                  onChange={(event) => setForm((current) => ({ ...current, petName: event.target.value }))}
-                  placeholder="Optional but helpful"
-                  className="w-full rounded-[22px] bg-[#FFF8EE] px-4 py-4 text-sm outline-none ring-2 ring-transparent transition focus:ring-[#F5C062]"
-                />
-              </label>
-            </div>
-
-           
-
-            <Button type="submit" disabled={isPending} className="pet-button-primary w-full gap-2">
-              <MessageCircleHeart className="h-4 w-4" />
-              {isPending ? "Sending request..." : `Send ${modeConfig.label.toLowerCase()} request`}
-            </Button>
-
-            {submitted ? (
-              <div className="rounded-[24px] bg-[#FFF8EE] p-4 text-sm leading-7 text-[#5B544C] shadow-[0_14px_28px_rgba(45,45,45,0.04)]">
-                Your request is saved and PetHub has emailed you a confirmation receipt.
+          {submitted ? (
+            <div className="mt-8 flex flex-col items-center gap-4 rounded-[28px] bg-[#FFF8EE] py-12 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[linear-gradient(135deg,#F5A623,#FFB347)] shadow-[0_8px_20px_rgba(245,166,35,0.28)]">
+                <HeartHandshake className="h-8 w-8 text-white" />
               </div>
-            ) : null}
-          </form>
+              <div>
+                <p className="text-xl font-bold text-[#2D2D2D]">You've joined!</p>
+                <p className="mt-2 text-sm leading-7 text-[#6B6B6B]">
+                  You're on the list. A confirmation has been sent to your email.
+                </p>
+              </div>
+              <Link to="/dashboard/community" className="pet-button-primary gap-2 mt-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back to community
+              </Link>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold text-[#5B544C]">Full name</span>
+                  <input
+                    type="text"
+                    value={form.fullName}
+                    onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))}
+                    className="w-full rounded-[22px] bg-[#FFF8EE] px-4 py-4 text-sm outline-none ring-2 ring-transparent transition focus:ring-[#F5C062]"
+                    required
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold text-[#5B544C]">Email</span>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+                    className="w-full rounded-[22px] bg-[#FFF8EE] px-4 py-4 text-sm outline-none ring-2 ring-transparent transition focus:ring-[#F5C062]"
+                    required
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold text-[#5B544C]">Contact number</span>
+                  <input
+                    type="tel"
+                    value={form.contactNumber}
+                    onChange={(event) => setForm((current) => ({ ...current, contactNumber: event.target.value }))}
+                    className="w-full rounded-[22px] bg-[#FFF8EE] px-4 py-4 text-sm outline-none ring-2 ring-transparent transition focus:ring-[#F5C062]"
+                    required
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold text-[#5B544C]">Pet name</span>
+                  <input
+                    type="text"
+                    value={form.petName}
+                    onChange={(event) => setForm((current) => ({ ...current, petName: event.target.value }))}
+                    placeholder="Optional but helpful"
+                    className="w-full rounded-[22px] bg-[#FFF8EE] px-4 py-4 text-sm outline-none ring-2 ring-transparent transition focus:ring-[#F5C062]"
+                  />
+                </label>
+              </div>
+
+              <Button type="submit" disabled={isPending} className="pet-button-primary w-full gap-2">
+                <HeartHandshake className="h-4 w-4" />
+                {isPending ? "Joining…" : "Join"}
+              </Button>
+            </form>
+          )}
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <div className="rounded-[24px] bg-[#FFF8EE] p-4 shadow-[0_16px_35px_rgba(45,45,45,0.04)]">

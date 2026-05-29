@@ -44,7 +44,17 @@ function ServiceDetailModal({ service, onClose, onEdit }) {
               <div className="flex items-center gap-1.5 text-xs text-[#B78331] mb-1">
                 <WalletCards className="h-3.5 w-3.5" /> Price
               </div>
-              <p className="text-lg font-bold text-[#2D2D2D]">NPR {service.price}</p>
+              {service.discountPrice != null && service.discountPrice < service.price ? (
+                <div>
+                  <p className="text-lg font-bold text-emerald-600">NPR {service.discountPrice}</p>
+                  <p className="text-xs line-through text-gray-400">NPR {service.price}</p>
+                  {service.discountTitle && (
+                    <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">{service.discountTitle}</span>
+                  )}
+                </div>
+              ) : (
+                <p className="text-lg font-bold text-[#2D2D2D]">NPR {service.price}</p>
+              )}
             </div>
             <div className="rounded-2xl bg-[#FFF8EE] px-4 py-3">
               <div className="flex items-center gap-1.5 text-xs text-[#B78331] mb-1">
@@ -113,7 +123,7 @@ const categoryConfig = {
   dental:      { badge: "bg-amber-50 text-amber-700 ring-1 ring-amber-200"  },
 };
 
-const EMPTY_FORM = { serviceName: "", description: "", price: "", durationMinutes: "45", category: "vet", requiresVet: false };
+const EMPTY_FORM = { serviceName: "", description: "", price: "", durationMinutes: "45", category: "vet", requiresVet: false, discountTitle: "", discountPrice: "" };
 
 function CategoryDropdown({ value, onChange, disabled }) {
   const cfg = categoryConfig[value] ?? categoryConfig.vet;
@@ -156,7 +166,7 @@ function ServiceModal({ initial, onClose, onSave, isSaving }) {
       toast.error("Name, description and price are required.");
       return;
     }
-    onSave({ ...form, price: Number(form.price), durationMinutes: Number(form.durationMinutes) });
+    onSave({ ...form, price: Number(form.price), durationMinutes: Number(form.durationMinutes), discountPrice: form.discountPrice !== "" ? Number(form.discountPrice) : null });
   };
 
   const inputCls = "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition bg-white";
@@ -202,6 +212,30 @@ function ServiceModal({ initial, onClose, onSave, isSaving }) {
               <select value={form.category} onChange={(e) => set("category", e.target.value)} className={inputCls}>
                 {categoryOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
+            </div>
+          </div>
+
+          {/* Discount fields */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Discount Title</label>
+              <input
+                value={form.discountTitle}
+                onChange={(e) => set("discountTitle", e.target.value)}
+                placeholder="e.g. Summer Sale"
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Discount Price (NPR)</label>
+              <input
+                type="number"
+                min={0}
+                value={form.discountPrice}
+                onChange={(e) => set("discountPrice", e.target.value)}
+                placeholder="e.g. 1200"
+                className={inputCls}
+              />
             </div>
           </div>
 
@@ -383,6 +417,7 @@ export const AdminServicesPage = () => {
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Price</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Duration</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Vet Required</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Discount</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
@@ -429,6 +464,22 @@ export const AdminServicesPage = () => {
                         <span className={`w-1.5 h-1.5 rounded-full ${service.requiresVet ? "bg-blue-500" : "bg-gray-300"}`} />
                         {service.requiresVet ? "Yes" : "No"}
                       </span>
+                    </td>
+
+                    {/* Discount */}
+                    <td className="px-6 py-4">
+                      {service.discountPrice != null && service.discountPrice < service.price ? (
+                        <div>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                            NPR {service.discountPrice}
+                          </span>
+                          {service.discountTitle && (
+                            <p className="mt-0.5 text-[11px] text-gray-400">{service.discountTitle}</p>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
                     </td>
 
                     {/* Active toggle */}

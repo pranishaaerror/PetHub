@@ -1,5 +1,6 @@
 import express from "express";
 import Appointment from "../models/AppointmentTable.js";
+import MedicalRecord from "../models/MedicalRecord.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 import User from "../models/User.js";
 import Services from "../models/Services.js";
@@ -50,6 +51,25 @@ router.post("/",verifyToken,async(req,res) => {
           return res.status(404).json({ message: "This service is not currently available." });
         }
 
+        // ── Block vaccination re-booking until the next due date ──
+        if (service.category === "vaccination") {
+          const pendingVaccRecord = await MedicalRecord.findOne({
+            userId: user._id,
+            type: "vaccination",
+            nextDueDate: { $gt: new Date() }, // due date is still in the future
+          }).sort({ nextDueDate: 1 });
+
+          if (pendingVaccRecord) {
+            const dueDateStr = new Date(pendingVaccRecord.nextDueDate).toLocaleDateString("en-US", {
+              month: "long", day: "numeric", year: "numeric",
+            });
+            return res.status(400).json({
+              message: `Your pet's next ${pendingVaccRecord.title} is not due until ${dueDateStr}. You can book again from that date.`,
+              nextDueDate: pendingVaccRecord.nextDueDate,
+            });
+          }
+        }
+
         const existingAppointment = await Appointment.findOne({
           serviceId,
           appointmentTime: scheduledAt,
@@ -78,7 +98,7 @@ router.post("/",verifyToken,async(req,res) => {
           payment: {
             provider: "khalti",
             currency: "NPR",
-            amount: Number(service.price),
+            amount: Number(service.discountPrice != null && service.discountPrice < service.price ? service.discountPrice : service.price),
             status: "unpaid",
           },
         });
@@ -153,7 +173,7 @@ router.patch("/:appointmentId/status", verifyToken, async (req, res) => {
       req.params.appointmentId,
       { status },
       { new: true, runValidators: true }
-    ).populate(["userId", "serviceId"]);
+    ).populate(["userId", "serviceId", "petId"]);
 
     if (!appointment) {
       return res.status(404).json({ message: "Appointment not found." });
@@ -165,6 +185,48 @@ router.patch("/:appointmentId/status", verifyToken, async (req, res) => {
       message: `${appointment.serviceId.serviceName} for ${appointment.petName} is now ${status}.`,
       type: "booking",
     });
+
+    // ── Auto-calculate vaccination next due date when completed ──
+    if (status === "completed" && appointment.serviceId?.category === "vaccination") {
+      const service = appointment.serviceId;
+      const intervalMonths = service.vaccinationIntervalMonths ?? 0;
+      const intervalDays   = service.vaccinationIntervalDays   ?? 0;
+
+      if (intervalMonths > 0 || intervalDays > 0) {
+        const vaccinationDate = appointment.appointmentTime;
+        const nextDue = new Date(vaccinationDate);
+        nextDue.setMonth(nextDue.getMonth() + intervalMonths);
+        nextDue.setDate(nextDue.getDate() + intervalDays);
+
+        // Update appointment nextDueDate
+        appointment.nextDueDate = nextDue;
+        await appointment.save();
+
+        // Create a vaccination medical record with nextDueDate
+        if (appointment.petId) {
+          await MedicalRecord.create({
+            userId: appointment.userId._id,
+            petId: appointment.petId,
+            appointmentId: appointment._id,
+            veterinarianId: appointment.veterinarianId ?? null,
+            type: "vaccination",
+            title: service.serviceName,
+            description: `Vaccination administered on ${vaccinationDate.toLocaleDateString()}. Next due: ${nextDue.toLocaleDateString()}.`,
+            date: vaccinationDate,
+            nextDueDate: nextDue,
+          });
+        }
+
+        // Send reminder notification + email
+        const dueDateStr = nextDue.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+        await createNotification({
+          userId: appointment.userId._id,
+          title: "Vaccination reminder set",
+          message: `${appointment.petName}'s next ${service.serviceName} is due on ${dueDateStr}. Book early to stay on schedule.`,
+          type: "booking",
+        });
+      }
+    }
 
     res.json({
       message: "Appointment status updated successfully.",

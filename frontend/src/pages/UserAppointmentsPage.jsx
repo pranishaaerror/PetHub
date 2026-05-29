@@ -1,15 +1,16 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   CalendarClock, CalendarHeart, ChevronRight,
   Clock3, XCircle, MapPin, Stethoscope, Scissors,
-  CheckCircle2, AlertCircle, Ban,
+  CheckCircle2, AlertCircle, Ban, WalletCards,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useQueryClient } from "@tanstack/react-query";
 import { EmptyState } from "../components/EmptyState";
 import { PetHubLoader } from "../components/PetHubLoader";
 import { useAppointment, useUpdateMyAppointment } from "../apis/appointment/hooks";
+import { useInitiateKhaltiPayment } from "../apis/payments/hooks";
 
 const formatWhen = (value) =>
   new Date(value).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
@@ -31,8 +32,11 @@ const getStatus = (key) => STATUS[key] ?? { label: key, bg: "#F5F5F5", text: "#5
 
 export const UserAppointmentsPage = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data: appointmentsResponse, isLoading } = useAppointment();
   const { mutateAsync: updateMyAppointment, isPending } = useUpdateMyAppointment();
+  const { mutateAsync: initiateKhaltiPayment } = useInitiateKhaltiPayment();
+  const [khaltiPendingId, setKhaltiPendingId] = useState(null);
   const [rescheduleId, setRescheduleId] = useState(null);
   const [newTime, setNewTime] = useState("");
 
@@ -77,6 +81,18 @@ export const UserAppointmentsPage = () => {
       setNewTime("");
     } catch (error) {
       toast.error(error.response?.data?.message || error.message);
+    }
+  };
+
+  const handleKhaltiPayment = async (appointmentId) => {
+    if (khaltiPendingId) return;
+    setKhaltiPendingId(appointmentId);
+    try {
+      const response = await initiateKhaltiPayment({ appointmentId });
+      window.location.href = response.data.paymentUrl;
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+      setKhaltiPendingId(null);
     }
   };
 
@@ -268,6 +284,18 @@ export const UserAppointmentsPage = () => {
                             <Clock3 className="h-3.5 w-3.5 text-[#F5A623]" />
                             <span className="text-xs font-600 text-[#5B4A36]">{formatTime(apt.appointmentTime)}</span>
                           </div>
+                          {/* Payment status badge */}
+                          {apt.payment?.status === "paid" ? (
+                            <div className="flex items-center gap-1.5 rounded-lg bg-[#E8F5E9] px-3 py-1.5">
+                              <CheckCircle2 className="h-3.5 w-3.5 text-[#2E7D32]" />
+                              <span className="text-xs font-600 text-[#2E7D32]">Paid</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 rounded-lg bg-[#FFF3E0] px-3 py-1.5">
+                              <WalletCards className="h-3.5 w-3.5 text-[#E65100]" />
+                              <span className="text-xs font-600 text-[#E65100]">Unpaid</span>
+                            </div>
+                          )}
                         </div>
 
                         {/* Actions */}
@@ -292,6 +320,18 @@ export const UserAppointmentsPage = () => {
                             <XCircle className="h-3.5 w-3.5" />
                             Cancel
                           </button>
+                          {/* Pay button if unpaid */}
+                          {apt.payment?.status !== "paid" && (
+                            <button
+                              type="button"
+                              disabled={khaltiPendingId !== null}
+                              onClick={() => handleKhaltiPayment(apt._id)}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-[#D8C4F0] bg-white px-3 py-1.5 text-xs font-600 text-[#5C2D91] hover:bg-[#F5EEFF] transition-colors disabled:opacity-50"
+                            >
+                              <WalletCards className="h-3.5 w-3.5" />
+                              {khaltiPendingId === apt._id ? "Redirecting…" : "Pay now"}
+                            </button>
+                          )}
                         </div>
 
                         {/* Reschedule panel */}

@@ -80,7 +80,7 @@ router.post("/", verifyToken, async (req, res) => {
       payment: {
         provider: "khalti",
         currency: "NPR",
-        amount: Number(service.price),
+        amount: Number(service.discountPrice != null && service.discountPrice < service.price ? service.discountPrice : service.price),
         status: "unpaid",
       },
     });

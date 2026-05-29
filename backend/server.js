@@ -25,6 +25,7 @@ import { ensureAdminAccount } from "./adminAccount.js";
 import { ensureDefaultServices } from "./serviceCatalog.js";
 import { ensureDefaultAdoptionPets } from "./adoptionCatalog.js";
 import { ensureDefaultCommunityMeetups } from "./communityCatalog.js";
+import { startReminderScheduler } from "./services/reminderScheduler.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,6 +52,7 @@ mongoose.connect(process.env.MONGO_URI, {
     await ensureDefaultServices();
     await ensureDefaultAdoptionPets();
     await ensureDefaultCommunityMeetups();
+    startReminderScheduler();
 })
   .catch(err => console.log(err));
 

@@ -95,7 +95,7 @@ function ServiceDetailModal({ service, onClose, onEdit }) {
         {/* Footer */}
         <div className="flex gap-3 px-6 pb-6">
           <button
-            onClick={() => { onClose(); onEdit(service); }}
+            onClick={() => { onClose(); onEdit({ ...service, price: String(service.price), durationMinutes: String(service.durationMinutes), discountPrice: service.discountPrice != null && service.discountPrice > 0 ? String(service.discountPrice) : "", vaccinationIntervalMonths: service.vaccinationIntervalMonths != null ? String(service.vaccinationIntervalMonths) : "", vaccinationIntervalDays: service.vaccinationIntervalDays != null ? String(service.vaccinationIntervalDays) : "" }); }}
             className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#F5A623,#FFB347)] py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(245,166,35,0.28)] hover:opacity-90 transition-all"
           >
             <Pencil className="h-4 w-4" /> Edit service
@@ -123,7 +123,7 @@ const categoryConfig = {
   dental:      { badge: "bg-amber-50 text-amber-700 ring-1 ring-amber-200"  },
 };
 
-const EMPTY_FORM = { serviceName: "", description: "", price: "", durationMinutes: "45", category: "vet", requiresVet: false, discountTitle: "", discountPrice: "" };
+const EMPTY_FORM = { serviceName: "", description: "", price: "", durationMinutes: "45", category: "vet", requiresVet: false, discountTitle: "", discountPrice: "", vaccinationIntervalMonths: "", vaccinationIntervalDays: "" };
 
 function CategoryDropdown({ value, onChange, disabled }) {
   const cfg = categoryConfig[value] ?? categoryConfig.vet;
@@ -166,7 +166,7 @@ function ServiceModal({ initial, onClose, onSave, isSaving }) {
       toast.error("Name, description and price are required.");
       return;
     }
-    onSave({ ...form, price: Number(form.price), durationMinutes: Number(form.durationMinutes), discountPrice: form.discountPrice !== "" ? Number(form.discountPrice) : null });
+    onSave({ ...form, price: Number(form.price), durationMinutes: Number(form.durationMinutes), discountPrice: form.discountPrice !== "" && Number(form.discountPrice) > 0 ? Number(form.discountPrice) : null, vaccinationIntervalMonths: form.vaccinationIntervalMonths !== "" ? Number(form.vaccinationIntervalMonths) : null, vaccinationIntervalDays: form.vaccinationIntervalDays !== "" ? Number(form.vaccinationIntervalDays) : null });
   };
 
   const inputCls = "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition bg-white";
@@ -238,6 +238,42 @@ function ServiceModal({ initial, onClose, onSave, isSaving }) {
               />
             </div>
           </div>
+
+          {/* Vaccination interval — only shown for vaccination category */}
+          {form.category === "vaccination" && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                Vaccination Interval <span className="text-gray-400 normal-case font-normal">(next due date calculation)</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] text-gray-400 mb-1">Months</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.vaccinationIntervalMonths}
+                    onChange={(e) => set("vaccinationIntervalMonths", e.target.value)}
+                    placeholder="e.g. 12"
+                    className={inputCls}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-gray-400 mb-1">Days</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.vaccinationIntervalDays}
+                    onChange={(e) => set("vaccinationIntervalDays", e.target.value)}
+                    placeholder="e.g. 0"
+                    className={inputCls}
+                  />
+                </div>
+              </div>
+              <p className="mt-1.5 text-[11px] text-gray-400">
+                When a vaccination appointment is marked complete, the next due date is automatically calculated and a reminder is sent to the user.
+              </p>
+            </div>
+          )}
 
           {/* Vet assignment toggle */}
           <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-[#FAFAF8] px-4 py-3">
@@ -368,7 +404,7 @@ export const AdminServicesPage = () => {
     <div className="p-6 space-y-6">
 
       {showModal && <ServiceModal onClose={() => setShowModal(false)} onSave={handleCreate} isSaving={isCreating} />}
-      {editTarget && <ServiceModal initial={{ ...editTarget, price: String(editTarget.price), durationMinutes: String(editTarget.durationMinutes) }} onClose={() => setEditTarget(null)} onSave={handleEdit} isSaving={isUpdating} />}
+      {editTarget && <ServiceModal initial={{ ...editTarget, price: String(editTarget.price), durationMinutes: String(editTarget.durationMinutes), discountPrice: editTarget.discountPrice != null && editTarget.discountPrice > 0 ? String(editTarget.discountPrice) : "", vaccinationIntervalMonths: editTarget.vaccinationIntervalMonths != null ? String(editTarget.vaccinationIntervalMonths) : "", vaccinationIntervalDays: editTarget.vaccinationIntervalDays != null ? String(editTarget.vaccinationIntervalDays) : "" }} onClose={() => setEditTarget(null)} onSave={handleEdit} isSaving={isUpdating} />}
       {deleteTarget && <DeleteConfirmModal service={deleteTarget} onConfirm={handleDelete} onCancel={() => setDeleteTarget(null)} isDeleting={isDeleting} />}
       {viewTarget && <ServiceDetailModal service={viewTarget} onClose={() => setViewTarget(null)} onEdit={(s) => setEditTarget({ ...s, price: String(s.price), durationMinutes: String(s.durationMinutes) })} />}
 

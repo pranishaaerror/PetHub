@@ -64,6 +64,17 @@ const servicesSchema = new mongoose.Schema({
         min: 0,
         default: null,
     },
+    // Vaccination interval — used to auto-calculate next due date
+    vaccinationIntervalMonths: {
+        type: Number,
+        min: 0,
+        default: null,
+    },
+    vaccinationIntervalDays: {
+        type: Number,
+        min: 0,
+        default: null,
+    },
    
 },{ timestamps: true });
 

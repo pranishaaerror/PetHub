@@ -1,6 +1,9 @@
 import express from "express";
 import Services from "../models/Services.js";
+import MedicalRecord from "../models/MedicalRecord.js";
+import AppointmentTable from "../models/AppointmentTable.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
+import { createNotification } from "../services/notificationService.js";
 
 const router = express.Router();
 
@@ -20,6 +23,8 @@ router.post("/",verifyToken,async(req,res) => {
           requiresVet = false,
           discountTitle = "",
           discountPrice = null,
+          vaccinationIntervalMonths = null,
+          vaccinationIntervalDays = null,
         } = req.body;
 
         if (!serviceName || !description || price === undefined) {
@@ -37,6 +42,8 @@ const newServices = new Services({
     requiresVet,
     discountTitle,
     discountPrice,
+    vaccinationIntervalMonths,
+    vaccinationIntervalDays,
     });
 
     await newServices.save();
@@ -65,7 +72,7 @@ router.patch("/:id", verifyToken, async (req, res) => {
     if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Only admins can update services." });
     }
-    const { serviceName, description, price, durationMinutes, category, isActive, requiresVet, discountTitle, discountPrice } = req.body;
+    const { serviceName, description, price, durationMinutes, category, isActive, requiresVet, discountTitle, discountPrice, vaccinationIntervalMonths, vaccinationIntervalDays } = req.body;
     const service = await Services.findByIdAndUpdate(
       req.params.id,
       { ...(serviceName !== undefined && { serviceName }),
@@ -76,10 +83,63 @@ router.patch("/:id", verifyToken, async (req, res) => {
         ...(isActive !== undefined && { isActive }),
         ...(requiresVet !== undefined && { requiresVet }),
         ...(discountTitle !== undefined && { discountTitle }),
-        ...(discountPrice !== undefined && { discountPrice }) },
+        ...(discountPrice !== undefined && { discountPrice }),
+        ...(vaccinationIntervalMonths !== undefined && { vaccinationIntervalMonths }),
+        ...(vaccinationIntervalDays !== undefined && { vaccinationIntervalDays }) },
       { new: true, runValidators: true }
     );
     if (!service) return res.status(404).json({ message: "Service not found." });
+
+    // ── Recalculate nextDueDate on existing pending vaccination records ──
+    // if the interval changed, update all future-dated records for this service
+    const intervalChanged =
+      (vaccinationIntervalMonths !== undefined && vaccinationIntervalMonths !== null) ||
+      (vaccinationIntervalDays !== undefined && vaccinationIntervalDays !== null);
+
+    if (intervalChanged && service.category === "vaccination") {
+      const newMonths = service.vaccinationIntervalMonths ?? 0;
+      const newDays   = service.vaccinationIntervalDays   ?? 0;
+
+      if (newMonths > 0 || newDays > 0) {
+        // Find appointments for this service that have a nextDueDate in the future
+        const pendingApts = await AppointmentTable.find({
+          serviceId: service._id,
+          nextDueDate: { $gt: new Date() },
+          status: "completed",
+        });
+
+        for (const apt of pendingApts) {
+          const newDue = new Date(apt.appointmentTime);
+          newDue.setMonth(newDue.getMonth() + newMonths);
+          newDue.setDate(newDue.getDate() + newDays);
+          apt.nextDueDate = newDue;
+          await apt.save();
+
+          // Also update the linked medical record (any type)
+          await MedicalRecord.updateMany(
+            { appointmentId: apt._id, nextDueDate: { $gt: new Date() } },
+            { $set: { nextDueDate: newDue } }
+          );
+        }
+
+        // Also update any vaccination records not linked to an appointment
+        // (created manually or by vet) — recalculate from their `date` field
+        const standaloneRecords = await MedicalRecord.find({
+          type: { $in: ["vaccination", "consultation"] },
+          nextDueDate: { $gt: new Date() },
+          appointmentId: null,
+        });
+
+        for (const rec of standaloneRecords) {
+          const newDue = new Date(rec.date);
+          newDue.setMonth(newDue.getMonth() + newMonths);
+          newDue.setDate(newDue.getDate() + newDays);
+          rec.nextDueDate = newDue;
+          await rec.save();
+        }
+      }
+    }
+
     res.json({ message: "Service updated.", service });
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -19,10 +19,10 @@ export const MedicalRecordsPage = () => {
   const records = (recordsResponse?.data ?? []).filter((r) => r.veterinarianId);
 
   const dueReminders = allRecords
-    .filter((record) => record.nextDueDate || record.appointmentId?.nextDueDate)
+    .filter((record) => record.nextDueDate)   // only records with their own nextDueDate
     .map((record) => ({
       ...record,
-      _resolvedDueDate: record.nextDueDate || record.appointmentId?.nextDueDate,
+      _resolvedDueDate: record.nextDueDate,
     }))
     .sort((a, b) => new Date(a._resolvedDueDate) - new Date(b._resolvedDueDate))
     .slice(0, 5);

@@ -214,7 +214,7 @@ router.patch("/vet/appointments/:id/consultation", verifyToken, requireRole("vet
     if (status === "completed") {
       apt.status = "completed";
       if (apt.serviceId?.category === "vaccination") {
-        apt.nextDueDate = new Date(new Date(apt.appointmentTime).setMonth(new Date(apt.appointmentTime).getMonth() + 3));
+        apt.nextDueDate = new Date(new Date(apt.appointmentTime).setMonth(new Date(apt.appointmentTime).getMonth() + (apt.serviceId.vaccinationIntervalMonths ?? 0)));
       }
     }
 

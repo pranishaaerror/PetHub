@@ -190,13 +190,11 @@ router.patch("/:appointmentId/status", verifyToken, async (req, res) => {
     if (status === "completed" && appointment.serviceId?.category === "vaccination") {
       const service = appointment.serviceId;
       const intervalMonths = service.vaccinationIntervalMonths ?? 0;
-      const intervalDays   = service.vaccinationIntervalDays   ?? 0;
 
-      if (intervalMonths > 0 || intervalDays > 0) {
+      if (intervalMonths > 0 ) {
         const vaccinationDate = appointment.appointmentTime;
         const nextDue = new Date(vaccinationDate);
         nextDue.setMonth(nextDue.getMonth() + intervalMonths);
-        nextDue.setDate(nextDue.getDate() + intervalDays);
 
         // Update appointment nextDueDate
         appointment.nextDueDate = nextDue;

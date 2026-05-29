@@ -18,14 +18,24 @@ export const MedicalRecordsPage = () => {
   const allRecords = allRecordsResponse?.data ?? [];
   const records = (recordsResponse?.data ?? []).filter((r) => r.veterinarianId);
 
-  const dueReminders = allRecords
-    .filter((record) => record.nextDueDate)   // only records with their own nextDueDate
-    .map((record) => ({
-      ...record,
-      _resolvedDueDate: record.nextDueDate,
-    }))
-    .sort((a, b) => new Date(a._resolvedDueDate) - new Date(b._resolvedDueDate))
-    .slice(0, 5);
+  const dueReminders = (() => {
+    const seen = new Set();
+    const results = [];
+    for (const record of allRecords) {
+      const dueDate = record.nextDueDate || record.appointmentId?.nextDueDate;
+      if (!dueDate) continue;
+      // Deduplicate: if two records share the same appointmentId, only show one
+      const dedupeKey = record.appointmentId?._id
+        ? String(record.appointmentId._id)
+        : record._id;
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
+      results.push({ ...record, _resolvedDueDate: dueDate });
+    }
+    return results
+      .sort((a, b) => new Date(a._resolvedDueDate) - new Date(b._resolvedDueDate))
+      .slice(0, 5);
+  })();
 
   if (isPetsLoading || isRecordsLoading) {
     return (

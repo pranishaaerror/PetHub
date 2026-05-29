@@ -24,7 +24,6 @@ router.post("/",verifyToken,async(req,res) => {
           discountTitle = "",
           discountPrice = null,
           vaccinationIntervalMonths = null,
-          vaccinationIntervalDays = null,
         } = req.body;
 
         if (!serviceName || !description || price === undefined) {
@@ -43,7 +42,6 @@ const newServices = new Services({
     discountTitle,
     discountPrice,
     vaccinationIntervalMonths,
-    vaccinationIntervalDays,
     });
 
     await newServices.save();
@@ -72,7 +70,7 @@ router.patch("/:id", verifyToken, async (req, res) => {
     if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Only admins can update services." });
     }
-    const { serviceName, description, price, durationMinutes, category, isActive, requiresVet, discountTitle, discountPrice, vaccinationIntervalMonths, vaccinationIntervalDays } = req.body;
+    const { serviceName, description, price, durationMinutes, category, isActive, requiresVet, discountTitle, discountPrice, vaccinationIntervalMonths } = req.body;
     const service = await Services.findByIdAndUpdate(
       req.params.id,
       { ...(serviceName !== undefined && { serviceName }),
@@ -84,8 +82,7 @@ router.patch("/:id", verifyToken, async (req, res) => {
         ...(requiresVet !== undefined && { requiresVet }),
         ...(discountTitle !== undefined && { discountTitle }),
         ...(discountPrice !== undefined && { discountPrice }),
-        ...(vaccinationIntervalMonths !== undefined && { vaccinationIntervalMonths }),
-        ...(vaccinationIntervalDays !== undefined && { vaccinationIntervalDays }) },
+        ...(vaccinationIntervalMonths !== undefined && { vaccinationIntervalMonths })},
       { new: true, runValidators: true }
     );
     if (!service) return res.status(404).json({ message: "Service not found." });
@@ -93,14 +90,12 @@ router.patch("/:id", verifyToken, async (req, res) => {
     // ── Recalculate nextDueDate on existing pending vaccination records ──
     // if the interval changed, update all future-dated records for this service
     const intervalChanged =
-      (vaccinationIntervalMonths !== undefined && vaccinationIntervalMonths !== null) ||
-      (vaccinationIntervalDays !== undefined && vaccinationIntervalDays !== null);
+      (vaccinationIntervalMonths !== undefined && vaccinationIntervalMonths !== null)
 
     if (intervalChanged && service.category === "vaccination") {
       const newMonths = service.vaccinationIntervalMonths ?? 0;
-      const newDays   = service.vaccinationIntervalDays   ?? 0;
 
-      if (newMonths > 0 || newDays > 0) {
+      if (newMonths > 0 ) {
         // Find appointments for this service that have a nextDueDate in the future
         const pendingApts = await AppointmentTable.find({
           serviceId: service._id,
@@ -111,7 +106,6 @@ router.patch("/:id", verifyToken, async (req, res) => {
         for (const apt of pendingApts) {
           const newDue = new Date(apt.appointmentTime);
           newDue.setMonth(newDue.getMonth() + newMonths);
-          newDue.setDate(newDue.getDate() + newDays);
           apt.nextDueDate = newDue;
           await apt.save();
 
@@ -133,7 +127,6 @@ router.patch("/:id", verifyToken, async (req, res) => {
         for (const rec of standaloneRecords) {
           const newDue = new Date(rec.date);
           newDue.setMonth(newDue.getMonth() + newMonths);
-          newDue.setDate(newDue.getDate() + newDays);
           rec.nextDueDate = newDue;
           await rec.save();
         }

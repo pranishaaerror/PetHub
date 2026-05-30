@@ -51,25 +51,6 @@ router.post("/",verifyToken,async(req,res) => {
           return res.status(404).json({ message: "This service is not currently available." });
         }
 
-        // ── Block vaccination re-booking until the next due date ──
-        if (service.category === "vaccination") {
-          const pendingVaccRecord = await MedicalRecord.findOne({
-            userId: user._id,
-            type: "vaccination",
-            nextDueDate: { $gt: new Date() }, // due date is still in the future
-          }).sort({ nextDueDate: 1 });
-
-          if (pendingVaccRecord) {
-            const dueDateStr = new Date(pendingVaccRecord.nextDueDate).toLocaleDateString("en-US", {
-              month: "long", day: "numeric", year: "numeric",
-            });
-            return res.status(400).json({
-              message: `Your pet's next ${pendingVaccRecord.title} is not due until ${dueDateStr}. You can book again from that date.`,
-              nextDueDate: pendingVaccRecord.nextDueDate,
-            });
-          }
-        }
-
         const existingAppointment = await Appointment.findOne({
           serviceId,
           appointmentTime: scheduledAt,
@@ -106,19 +87,19 @@ router.post("/",verifyToken,async(req,res) => {
         const appointment = await Appointment.findById(newAppointment._id).populate(["userId", "serviceId"]);
         let emailSent = false;
 
-        // try {
-        //   await sendAppointmentConfirmationEmail({
-        //     to: appointment.ownerEmail,
-        //     ownerName: appointment.ownerName,
-        //     bookingId: appointment.bookingId,
-        //     serviceName: appointment.serviceId.serviceName,
-        //     appointmentTime: appointment.appointmentTime,
-        //     petName: appointment.petName,
-        //   });
-        //   emailSent = true;
-        // } catch (emailError) {
-        //   console.error("Appointment confirmation email failed:", emailError.message);
-        // }
+        try {
+          await sendAppointmentConfirmationEmail({
+            to: appointment.ownerEmail,
+            ownerName: appointment.ownerName,
+            bookingId: appointment.bookingId,
+            serviceName: appointment.serviceId.serviceName,
+            appointmentTime: appointment.appointmentTime,
+            petName: appointment.petName,
+          });
+          emailSent = true;
+        } catch (emailError) {
+          console.error("Appointment confirmation email failed:", emailError.message);
+        }
 
     res.status(201).json({
       message: emailSent

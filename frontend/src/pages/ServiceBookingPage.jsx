@@ -11,11 +11,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useCreateAppointment } from "../apis/appointment/hooks";
 import { useMyPets } from "../apis/pets/hooks";
 import { useServices } from "../apis/services/hooks";
-import { useMyRecords } from "../apis/records/hooks";
 import { useInitiateKhaltiPayment, useVerifyKhaltiPayment } from "../apis/payments/hooks";
 import { useAuth } from "../context/AuthContext";
 
-/* ── Payment result modal ── */
 function PaymentResultModal({ result, onClose }) {
   if (!result) return null;
   const isSuccess = result.status === "success";
@@ -128,7 +126,6 @@ export const ServiceBookingPage = () => {
   const { userProfile }= useAuth();
   const { data: petsResponse }         = useMyPets();
   const { data: servicesResponse }     = useServices();
-  const { data: myRecordsResponse }    = useMyRecords();
   const { mutateAsync: createAppointment,    isPending }        = useCreateAppointment();
   const { mutateAsync: initiateKhaltiPayment } = useInitiateKhaltiPayment();
   const { mutateAsync: verifyKhaltiPayment } = useVerifyKhaltiPayment();
@@ -162,27 +159,6 @@ export const ServiceBookingPage = () => {
     if (!liveServices.length) return fallbackServices.map((s) => ({ ...s, _id: null }));
     return liveServices.map((s, i) => ({ ...s, ...getServicePresentation(s, i), key: s._id }));
   }, [liveServices]);
-
-  // ── Build a map of vaccination service name → pending due date ──
-  // A vaccination service is locked if the user has a medical record of type
-  // "vaccination" with a matching title and a future nextDueDate.
-  // Falls back to locking ALL vaccination services if any pending record exists.
-  const vaccLockMap = useMemo(() => {
-    const records = myRecordsResponse?.data ?? [];
-    const now = new Date();
-    const map = new Map(); // serviceName (lowercase) → nextDueDate
-    for (const r of records) {
-      if (r.type === "vaccination" && r.nextDueDate && new Date(r.nextDueDate) > now) {
-        const key = r.title?.toLowerCase() ?? "";
-        const existing = map.get(key);
-        // Keep the earliest due date per service name
-        if (!existing || new Date(r.nextDueDate) < new Date(existing)) {
-          map.set(key, r.nextDueDate);
-        }
-      }
-    }
-    return map;
-  }, [myRecordsResponse]);
 
   const primaryPet = petsResponse?.data?.primaryPet ?? petsResponse?.data?.pets?.[0] ?? null;
 
@@ -311,7 +287,6 @@ export const ServiceBookingPage = () => {
     } catch (error) { toast.error(error.response?.data?.message || error.message); }
   };
 
-  // ── Fixed: track pending state per appointmentId, not globally ──
   const handleKhaltiPayment = async (appointmentId) => {
     if (khaltiPendingId) return; // already processing one
     setKhaltiPendingId(appointmentId);
@@ -339,7 +314,6 @@ export const ServiceBookingPage = () => {
         }}
       />
 
-      {/* ── HEADER ── */}
       <div className="rounded-[28px] bg-white shadow-[0_6px_28px_rgba(45,45,45,0.07)] p-5 sm:p-7">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#FFF0D6]">
@@ -355,7 +329,6 @@ export const ServiceBookingPage = () => {
           </div>
         </div>
 
-        {/* Step indicator */}
         <div className="mt-5 flex items-center gap-2">
           {["Choose service", "Details & Time", "Confirm & Pay"].map((label, i) => {
             const step = i + 1;
@@ -376,103 +349,54 @@ export const ServiceBookingPage = () => {
         </div>
       </div>
 
-      {/* ── STEP 1: All services ── */}
       {bookingStep === 1 && (
         <div className="rounded-[28px] bg-white shadow-[0_6px_28px_rgba(45,45,45,0.07)] p-5 sm:p-6">
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A97C3A]">Choose a service</span>
           <p className="mt-1 text-sm text-[#6B6B6B]">Click on any service to see available time slots.</p>
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {serviceCards.map((service) => {
-              // Lock this card if it's a vaccination service with a pending due date
-              // Match by service name first; fall back to locking all vaccination services
-              // if there's any pending record with a generic/unmatched title.
-              let lockedUntil = null;
-              if (service.category === "vaccination") {
-                const nameKey = service.serviceName?.toLowerCase() ?? "";
-                if (vaccLockMap.has(nameKey)) {
-                  lockedUntil = vaccLockMap.get(nameKey);
-                } else if (vaccLockMap.size > 0) {
-                  // Any pending vaccination record locks all vaccination services
-                  lockedUntil = [...vaccLockMap.values()].sort((a, b) => new Date(a) - new Date(b))[0];
-                }
-              }
-              const isVaccLocked = lockedUntil != null;
-              const dueDateStr = isVaccLocked
-                ? new Date(lockedUntil).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
-                : null;
-
-              if (isVaccLocked) {
-                return (
-                  <div
-                    key={service._id ?? service.key}
-                    className="rounded-[18px] p-[18px] border-2 border-dashed border-[#E8D9C4] bg-[#FAFAF8] text-left w-full opacity-80 relative overflow-hidden"
-                  >
-                    {/* Lock overlay badge */}
-                    <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-[#FFF3CD] px-2.5 py-1 text-[10px] font-semibold text-[#8B6428]">
-                      <Clock3 className="h-3 w-3" /> Due {dueDateStr}
-                    </div>
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F0E8DC]">
-                      <service.icon className="h-5 w-5 text-[#C8B8A8]" />
-                    </div>
-                    <p className="mt-4 text-base font-bold text-[#9B9B9B]">{service.serviceName}</p>
-                    <p className="mt-1.5 text-xs leading-relaxed text-[#B8A898]">{service.description}</p>
-                    <p className="mt-3 text-xs font-semibold text-[#C8A96A]">
-                      Available from {dueDateStr}
-                    </p>
-                    <div className="mt-3 flex items-center justify-between">
-                      <p className="text-xl font-bold text-[#C8B8A8]">{formatNpr(service.price)}</p>
-                      <span className="text-xs font-semibold text-[#C8B8A8]">{service.durationMinutes ?? 45} min</span>
-                    </div>
+            {serviceCards.map((service) => (
+              <button
+                key={service._id ?? service.key}
+                type="button"
+                onClick={() => {
+                  setSelectedServiceKey(service._id ?? service.key);
+                  setBookingStep(2);
+                }}
+                className="rounded-[18px] p-[18px] border-2 border-transparent bg-[#FFF8EE] hover:bg-[#FFF0D6] hover:border-[#F5A623]/40 hover:shadow-[0_8px_24px_rgba(245,166,35,0.15)] cursor-pointer transition-all text-left w-full group"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-sm group-hover:bg-[#FFF0D6] transition-colors">
+                    <service.icon className="h-5 w-5 text-[#F5A623]" />
                   </div>
-                );
-              }
-
-              return (
-                <button
-                  key={service._id ?? service.key}
-                  type="button"
-                  onClick={() => {
-                    setSelectedServiceKey(service._id ?? service.key);
-                    setBookingStep(2);
-                  }}
-                  className="rounded-[18px] p-[18px] border-2 border-transparent bg-[#FFF8EE] hover:bg-[#FFF0D6] hover:border-[#F5A623]/40 hover:shadow-[0_8px_24px_rgba(245,166,35,0.15)] cursor-pointer transition-all text-left w-full group"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-sm group-hover:bg-[#FFF0D6] transition-colors">
-                      <service.icon className="h-5 w-5 text-[#F5A623]" />
-                    </div>
-                    <span className="rounded-full bg-[#FFE8B8] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#8B6428]">
-                      {service.badge}
-                    </span>
+                  <span className="rounded-full bg-[#FFE8B8] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#8B6428]">
+                    {service.badge}
+                  </span>
+                </div>
+                <p className="mt-4 text-base font-bold text-[#2D2D2D]">{service.serviceName}</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-[#6B6B6B]">{service.description}</p>
+                <div className="mt-4 flex items-center justify-between">
+                  <div>
+                    {service.discountPrice != null && service.discountPrice < service.price ? (
+                      <div className="flex items-baseline gap-2">
+                        <p className="text-xl font-bold text-emerald-600">{formatNpr(service.discountPrice)}</p>
+                        <p className="text-sm line-through text-[#9B9B9B]">{formatNpr(service.price)}</p>
+                      </div>
+                    ) : (
+                      <p className="text-xl font-bold text-[#2D2D2D]">{formatNpr(service.price)}</p>
+                    )}
+                    {service.discountTitle && service.discountPrice != null && (
+                      <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                        {service.discountTitle}
+                      </span>
+                    )}
                   </div>
-                  <p className="mt-4 text-base font-bold text-[#2D2D2D]">{service.serviceName}</p>
-                  <p className="mt-1.5 text-xs leading-relaxed text-[#6B6B6B]">{service.description}</p>
-                  <div className="mt-4 flex items-center justify-between">
-                    <div>
-                      {service.discountPrice != null && service.discountPrice < service.price ? (
-                        <div className="flex items-baseline gap-2">
-                          <p className="text-xl font-bold text-emerald-600">{formatNpr(service.discountPrice)}</p>
-                          <p className="text-sm line-through text-[#9B9B9B]">{formatNpr(service.price)}</p>
-                        </div>
-                      ) : (
-                        <p className="text-xl font-bold text-[#2D2D2D]">{formatNpr(service.price)}</p>
-                      )}
-                      {service.discountTitle && service.discountPrice != null && (
-                        <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                          {service.discountTitle}
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-xs font-semibold text-[#9B9B9B]">{service.durationMinutes ?? 45} min</span>
-                  </div>
-                </button>
-              );
-            })}
+                  <span className="text-xs font-semibold text-[#9B9B9B]">{service.durationMinutes ?? 45} min</span>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
       )}
-
-      {/* ── STEP 2: Timetable + Pet details (side by side) ── */}
       {bookingStep === 2 && selectedService && (
         <div className="space-y-6">
           {/* Service summary bar */}
@@ -497,7 +421,6 @@ export const ServiceBookingPage = () => {
             </div>
           </div>
 
-          {/* Calendar/slots + Pet details side by side */}
           <div className="grid gap-6 lg:grid-cols-2">
             {/* LEFT — Calendar + Time slots */}
             <div className="rounded-[28px] bg-white shadow-[0_6px_28px_rgba(45,45,45,0.07)] p-5 sm:p-6">
@@ -557,7 +480,6 @@ export const ServiceBookingPage = () => {
                 </div>
               </div>
 
-              {/* Time slots — below calendar */}
               <div className="mt-6 border-t border-[#F0E8DC] pt-5">
                 <p className="text-sm font-semibold text-[#2D2D2D]">
                   Available slots for{" "}
@@ -588,7 +510,6 @@ export const ServiceBookingPage = () => {
               </div>
             </div>
 
-            {/* RIGHT — Pet details form */}
             <div className="rounded-[28px] bg-white shadow-[0_6px_28px_rgba(45,45,45,0.07)] p-5 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -644,7 +565,7 @@ export const ServiceBookingPage = () => {
             </div>
           </div>
 
-          {/* Navigation */}
+   
           <div className="flex items-center justify-between gap-3">
             <button
               type="button"
@@ -664,7 +585,6 @@ export const ServiceBookingPage = () => {
         </div>
       )}
 
-      {/* ── STEP 3: Booking summary + Payment ── */}
       {bookingStep === 3 && selectedService && (
         <div className="mx-auto max-w-lg space-y-6">
           {/* Summary card */}

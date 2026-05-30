@@ -211,7 +211,6 @@ export const AdminAdoptionRequestsPage = () => {
         </div>
       </div>
 
-      {/* ── STAT CHIPS ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {statuses.map((s) => {
           const cfg = statusConfig[s];
@@ -227,7 +226,7 @@ export const AdminAdoptionRequestsPage = () => {
         })}
       </div>
 
-      {/* ── TABLE ── */}
+     
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -262,7 +261,7 @@ export const AdminAdoptionRequestsPage = () => {
                 return (
                   <tr key={request._id} className="hover:bg-gray-50 transition-colors">
 
-                    {/* Applicant */}
+                    
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-amber-500 text-sm font-bold text-white">
@@ -278,7 +277,7 @@ export const AdminAdoptionRequestsPage = () => {
                       </div>
                     </td>
 
-                    {/* Pet */}
+                    
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <HeartHandshake className="h-4 w-4 text-amber-500 shrink-0" />
@@ -293,13 +292,13 @@ export const AdminAdoptionRequestsPage = () => {
                       </div>
                     </td>
 
-                    {/* Household & Lifestyle */}
+                    
                     <td className="px-6 py-4">
                       <p className="text-sm text-gray-700">{request.householdType || "—"}</p>
                       <p className="text-xs text-gray-400 mt-0.5">{request.lifestyle || "—"}</p>
                     </td>
 
-                    {/* Message */}
+                  
                     <td className="px-6 py-4 max-w-[220px]">
                       <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
                         {request.message || "No message provided."}
@@ -324,7 +323,7 @@ export const AdminAdoptionRequestsPage = () => {
                       </p>
                     </td>
 
-                    {/* Status dropdown */}
+                    
                     <td className="px-4 py-4">
                       <StatusDropdown
                         value={request.status}
@@ -333,7 +332,7 @@ export const AdminAdoptionRequestsPage = () => {
                       />
                     </td>
 
-                    {/* Actions */}
+                   
                     <td className="px-4 py-4">
                       <button
                         onClick={() => setDeleteTarget(request)}

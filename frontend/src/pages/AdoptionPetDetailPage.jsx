@@ -146,11 +146,10 @@ export const AdoptionPetDetailPage = () => {
         </Link>
       </div>
 
-      {/* ── Hero card ─────────────────────────────────────────────── */}
+   
       <section className="overflow-hidden rounded-[28px] bg-white shadow-[0_8px_32px_rgba(45,45,45,0.08)]">
         <div className="grid gap-0 xl:grid-cols-[1fr_420px]">
 
-          {/* Left — info */}
           <div className="flex flex-col justify-center gap-5 p-6 md:p-10">
 
             {/* Species + status tags */}
@@ -173,14 +172,12 @@ export const AdoptionPetDetailPage = () => {
               <p className="mt-3 max-w-lg text-base leading-7 text-[#7A6A50]">{pet.summary}</p>
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-3 gap-3">
               <StatCard label="Breed"  value={pet.breed} />
               <StatCard label="Age"    value={pet.age} />
               <StatCard label="Gender" value={pet.gender} />
             </div>
 
-            {/* CTAs */}
             <div className="flex flex-wrap gap-3">
               <Link
                 to={canRequest ? `/dashboard/adoption/${pet._id}/request` : "#request-status"}
@@ -206,7 +203,6 @@ export const AdoptionPetDetailPage = () => {
             </div>
           </div>
 
-          {/* Right — photo */}
           <div className="relative min-h-[280px] overflow-hidden bg-[linear-gradient(145deg,#FFE6BF,#F5A623)] xl:min-h-[440px]">
             <div className="absolute left-8 top-8 h-32 w-32 rounded-full bg-white/20 blur-3xl" />
             <div className="absolute bottom-6 right-6 h-36 w-36 rounded-full bg-[#FFC978]/30 blur-3xl" />
@@ -215,7 +211,7 @@ export const AdoptionPetDetailPage = () => {
               alt={pet.petName}
               className="relative z-10 h-full w-full object-cover object-center"
             />
-            {/* Heart overlay */}
+         
             <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 rounded-2xl bg-white/80 px-3 py-2 backdrop-blur-sm">
               <Heart className="h-4 w-4 text-[#F5A623]" />
               <span className="text-xs font-semibold text-[#6B5C3E]">Waiting for a home</span>

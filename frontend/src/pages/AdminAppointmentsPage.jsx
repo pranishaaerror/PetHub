@@ -387,7 +387,6 @@ export const AdminAppointmentsPage = () => {
         </div>
       </div>
 
-      {/* ── STAT CHIPS ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {statuses.map((s) => {
           const cfg = statusConfig[s];
@@ -403,7 +402,7 @@ export const AdminAppointmentsPage = () => {
         })}
       </div>
 
-      {/* ── TABLE ── */}
+      {/*  TABLE*/}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto ">
           <table className="w-full">
@@ -475,7 +474,6 @@ export const AdminAppointmentsPage = () => {
                     </div>
                   </td>
 
-                  {/* Payment */}
                   <td className="px-6 py-4">
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${
@@ -486,7 +484,7 @@ export const AdminAppointmentsPage = () => {
                     </span>
                   </td>
 
-                  {/* Status dropdown */}
+                 
                   <td className="px-4 py-4">
                     <StatusDropdown
                       value={appointment.status}
@@ -508,7 +506,7 @@ export const AdminAppointmentsPage = () => {
                     )}
                   </td>
 
-                  {/* Actions */}
+                 
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-1">
                       {appointment.status === 'confirmed' && appointment.serviceId?.requiresVet && (

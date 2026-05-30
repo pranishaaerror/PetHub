@@ -3,6 +3,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Plus, Pencil, Trash2, X, PawPrint,
   Venus, Mars, CalendarDays, MapPin, Heart, Camera,
+  Dog, Cat, Bird, Rabbit, Squirrel,
+  ShieldCheck, AlertCircle, Clock,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { PetHubLoader } from "../components/PetHubLoader";
@@ -24,13 +26,14 @@ const statusConfig = {
   Adopted:   { badge: "bg-purple-50 text-purple-700 ring-1 ring-purple-200",    dot: "bg-purple-400"  },
 };
 
-const SPECIES_EMOJI = { dog: "🐶", cat: "🐱", rabbit: "🐰", bird: "🐦", hamster: "🐹" };
-const getEmoji = (breed = "") => {
+const getSpeciesIcon = (breed = "") => {
   const lower = breed.toLowerCase();
-  for (const [key, emoji] of Object.entries(SPECIES_EMOJI)) {
-    if (lower.includes(key)) return emoji;
-  }
-  return "🐾";
+  if (lower.includes("dog"))     return <Dog className="h-10 w-10 text-[#C48A2A]" />;
+  if (lower.includes("cat"))     return <Cat className="h-10 w-10 text-[#C48A2A]" />;
+  if (lower.includes("rabbit"))  return <Rabbit className="h-10 w-10 text-[#C48A2A]" />;
+  if (lower.includes("bird"))    return <Bird className="h-10 w-10 text-[#C48A2A]" />;
+  if (lower.includes("hamster")) return <Squirrel className="h-10 w-10 text-[#C48A2A]" />;
+  return <PawPrint className="h-10 w-10 text-[#C48A2A]" />;
 };
 
 const EMPTY_FORM = {
@@ -67,23 +70,19 @@ function PetModal({ initial, onClose, onSave, isSaving, onPhotoUpload, isUploadi
   const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Show local blob preview immediately
     const blobUrl = URL.createObjectURL(file);
     setPreviewUrl(blobUrl);
     if (isEdit && initial?._id && onPhotoUpload) {
-      // Upload immediately for existing pets and update form imageGallery
       try {
         const res = await onPhotoUpload({ petId: initial._id, file });
-        // Update form so Save changes preserves the new photo
         const newPhotoUrl = res?.data?.photoUrl ?? res?.photoUrl;
         if (newPhotoUrl) {
           setForm((f) => ({ ...f, imageGallery: [newPhotoUrl] }));
         }
       } catch {
-        // preview already shown, upload error handled by parent
+        // handled in parent
       }
     } else {
-      // Store file to upload after creation
       setForm((f) => ({ ...f, _pendingPhoto: file }));
     }
   };
@@ -101,7 +100,7 @@ function PetModal({ initial, onClose, onSave, isSaving, onPhotoUpload, isUploadi
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F5A623]/10 backdrop-blur-[3px] px-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[92vh] flex flex-col">
 
-        {/* Header */}
+       
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FFF0D6]">
@@ -124,10 +123,9 @@ function PetModal({ initial, onClose, onSave, isSaving, onPhotoUpload, isUploadi
           </button>
         </div>
 
-        {/* Body */}
+        {/* Form */}
         <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
 
-          {/* Photo upload */}
           <Field label="Pet Photo">
             <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#F0DFC0] bg-[#FFF8EE] py-5 transition hover:border-[#F5A623] hover:bg-[#FFF5E0]">
               {previewUrl ? (
@@ -165,19 +163,16 @@ function PetModal({ initial, onClose, onSave, isSaving, onPhotoUpload, isUploadi
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Pet Name" required>
-              <input value={form.petName} onChange={(e) => set("petName", e.target.value)}
-                className={inputCls} />
+              <input value={form.petName} onChange={(e) => set("petName", e.target.value)} className={inputCls} />
             </Field>
             <Field label="Breed" required>
-              <input value={form.breed} onChange={(e) => set("breed", e.target.value)}
-                className={inputCls} />
+              <input value={form.breed} onChange={(e) => set("breed", e.target.value)} className={inputCls} />
             </Field>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Age" required>
-              <input value={form.age} onChange={(e) => set("age", e.target.value)}
-                className={inputCls} />
+              <input value={form.age} onChange={(e) => set("age", e.target.value)} className={inputCls} />
             </Field>
             <Field label="Gender" required>
               <select value={form.gender} onChange={(e) => set("gender", e.target.value)} className={inputCls}>
@@ -200,13 +195,11 @@ function PetModal({ initial, onClose, onSave, isSaving, onPhotoUpload, isUploadi
           </div>
 
           <Field label="Location">
-            <input value={form.location} onChange={(e) => set("location", e.target.value)}
-              className={inputCls} />
+            <input value={form.location} onChange={(e) => set("location", e.target.value)} className={inputCls} />
           </Field>
 
           <Field label="Health Status">
-            <input value={form.healthStatus} onChange={(e) => set("healthStatus", e.target.value)}
-              className={inputCls} />
+            <input value={form.healthStatus} onChange={(e) => set("healthStatus", e.target.value)} className={inputCls} />
           </Field>
 
           <Field label="Description">
@@ -215,13 +208,13 @@ function PetModal({ initial, onClose, onSave, isSaving, onPhotoUpload, isUploadi
           </Field>
 
           <Field label="Vaccinated">
-              <select value={form.vaccinated ? "yes" : "no"}
-                onChange={(e) => set("vaccinated", e.target.value === "yes")}
-                className={inputCls}>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
-            </Field>
+            <select value={form.vaccinated ? "yes" : "no"}
+              onChange={(e) => set("vaccinated", e.target.value === "yes")}
+              className={inputCls}>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </Field>
         </form>
 
         {/* Footer */}
@@ -267,8 +260,8 @@ function DeleteModal({ pet, onConfirm, onCancel, isPending }) {
 }
 
 function PetCard({ pet, onEdit, onDelete }) {
-  const emoji = getEmoji(pet.breed);
   const status = statusConfig[pet.status] ?? statusConfig.Available;
+  const speciesIcon = getSpeciesIcon(pet.breed);
 
   return (
     <div className="group flex flex-col rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden">
@@ -277,22 +270,31 @@ function PetCard({ pet, onEdit, onDelete }) {
       <div className="relative flex items-center justify-center bg-gradient-to-br from-[#FFF5E0] to-[#FFE9A8] h-64 overflow-hidden rounded-t-2xl">
         {pet.imageGallery?.[0] && !pet.imageGallery[0].endsWith("/photo") ? (
           <img
-            src={pet.imageGallery[0].startsWith("http") ? pet.imageGallery[0] : `${import.meta.env.VITE_BACKEND_URL?.replace("/api", "") || "http://localhost:5000"}${pet.imageGallery[0]}`}
+            src={
+              pet.imageGallery[0].startsWith("http")
+                ? pet.imageGallery[0]
+                : `${import.meta.env.VITE_BACKEND_URL?.replace("/api", "") || "http://localhost:5000"}${pet.imageGallery[0]}`
+            }
             alt={pet.petName}
             className="h-full w-full object-cover object-top"
           />
         ) : (
-          <span className="text-6xl">{emoji}</span>
+          <div className="flex flex-col items-center gap-2 opacity-60">
+            {speciesIcon}
+          </div>
         )}
+
         {/* Status badge */}
         <div className={`absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${status.badge}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
           {pet.status}
         </div>
+
         {/* Vaccinated badge */}
         {pet.vaccinated && (
-          <div className="absolute top-3 right-3 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-            ✓ Vaccinated
+          <div className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+            <ShieldCheck className="h-3 w-3 text-emerald-600" />
+            Vaccinated
           </div>
         )}
       </div>
@@ -306,10 +308,14 @@ function PetCard({ pet, onEdit, onDelete }) {
 
         <div className="flex flex-wrap gap-1.5">
           <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF5E0] px-2.5 py-0.5 text-[11px] font-semibold text-[#8B6428]">
-            {pet.gender === "Female" ? <Venus className="h-3 w-3 text-pink-500" /> : <Mars className="h-3 w-3 text-blue-500" />}
+            {pet.gender === "Female"
+              ? <Venus className="h-3 w-3 text-pink-500" />
+              : <Mars className="h-3 w-3 text-blue-500" />
+            }
             {pet.gender}
           </span>
-          <span className="rounded-full bg-[#FFF5E0] px-2.5 py-0.5 text-[11px] font-semibold text-[#8B6428]">
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF5E0] px-2.5 py-0.5 text-[11px] font-semibold text-[#8B6428]">
+            <Clock className="h-3 w-3 text-[#C48A2A]" />
             {pet.age}
           </span>
           {pet.size && (
@@ -379,8 +385,7 @@ export const AdminAdoptionPetsPage = () => {
   const availableCount = pets.filter((p) => p.status === "Available").length;
   const pendingCount   = pets.filter((p) => p.status === "Pending").length;
   const adoptedCount   = pets.filter((p) => p.status === "Adopted").length;
-  // Only show non-adopted pets in the grid
-  const visiblePets = pets.filter((p) => p.status !== "Adopted");
+  const visiblePets    = pets.filter((p) => p.status !== "Adopted");
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["get-adoption"] });
 
@@ -389,7 +394,7 @@ export const AdminAdoptionPetsPage = () => {
       const res = await uploadPhoto({ petId, file });
       await invalidate();
       toast.success("Photo uploaded.");
-      return res; // return so modal can update imageGallery
+      return res;
     } catch (err) {
       toast.error(err.response?.data?.message || err.message);
     }
@@ -441,7 +446,7 @@ export const AdminAdoptionPetsPage = () => {
   return (
     <div className="p-6 space-y-6">
 
-      {/* ── HEADER ── */}
+      {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Adoption Center</h1>
@@ -458,7 +463,7 @@ export const AdminAdoptionPetsPage = () => {
         </button>
       </div>
 
-      {/* ── STATS ── */}
+      {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
           <p className="text-xs font-semibold text-amber-600">Total Listed</p>
@@ -478,11 +483,11 @@ export const AdminAdoptionPetsPage = () => {
         </div>
       </div>
 
-      {/* ── GRID ── */}
+      {/* Grid */}
       {visiblePets.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-amber-200 bg-amber-50/30 py-20 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#FFF0D6] text-3xl">
-            🐾
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#FFF0D6]">
+            <PawPrint className="h-8 w-8 text-[#F5A623]" />
           </div>
           <div>
             <p className="text-base font-bold text-gray-700">No pets listed yet</p>
@@ -519,12 +524,25 @@ export const AdminAdoptionPetsPage = () => {
         </div>
       )}
 
-      {/* ── MODALS ── */}
+      {/* Modals */}
       {showModal && (
-        <PetModal onClose={() => setShowModal(false)} onSave={handleCreate} isSaving={isCreating} onPhotoUpload={handlePhotoUpload} isUploadingPhoto={isUploadingPhoto} />
+        <PetModal
+          onClose={() => setShowModal(false)}
+          onSave={handleCreate}
+          isSaving={isCreating}
+          onPhotoUpload={handlePhotoUpload}
+          isUploadingPhoto={isUploadingPhoto}
+        />
       )}
       {editTarget && (
-        <PetModal initial={editTarget} onClose={() => setEditTarget(null)} onSave={handleEdit} isSaving={isUpdating} onPhotoUpload={handlePhotoUpload} isUploadingPhoto={isUploadingPhoto} />
+        <PetModal
+          initial={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSave={handleEdit}
+          isSaving={isUpdating}
+          onPhotoUpload={handlePhotoUpload}
+          isUploadingPhoto={isUploadingPhoto}
+        />
       )}
       {deleteTarget && (
         <DeleteModal

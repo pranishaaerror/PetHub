@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@headlessui/react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -14,20 +13,25 @@ import {
   Sparkles,
   Stethoscope,
   Camera,
-  X,
   Bell,
   Calendar,
   Users,
   Dog,
   Syringe,
   AlertCircle,
+  RefreshCw,
+  TriangleAlert,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { PetHubLoader } from "../components/PetHubLoader";
 import { StepProgress } from "../components/StepProgress";
 import { UploadPetPhotoCard } from "../components/UploadPetPhotoCard";
-import { useOnboardingStatus, useCompleteOnboarding, useSaveOnboardingStep } from "../apis/onboarding/hooks";
+import {
+  useOnboardingStatus,
+  useCompleteOnboarding,
+  useSaveOnboardingStep,
+} from "../apis/onboarding/hooks";
 import { useAuth } from "../context/AuthContext";
 import {
   clearOnboardingDraft,
@@ -36,7 +40,6 @@ import {
 } from "../utils/onboardingDraft";
 import { resolveRedirectPath } from "../utils/authSession";
 
-// Enhanced schema with better validation
 const onboardingSchema = z.object({
   fullName: z.string().min(2, "Please enter your full name."),
   phoneNumber: z.string().optional(),
@@ -130,7 +133,6 @@ const defaultValues = {
   carePlanPreference: "balanced",
 };
 
-// Premium animations
 const sectionAnimation = {
   initial: { opacity: 0, y: 24, scale: 0.98 },
   animate: { opacity: 1, y: 0, scale: 1 },
@@ -144,7 +146,6 @@ const fadeInUp = {
   transition: { duration: 0.5, ease: "easeOut" },
 };
 
-// Enhanced Checkbox component with premium styling
 const PremiumCheckbox = ({ label, description, register, name, icon: Icon }) => (
   <motion.label
     whileHover={{ scale: 1.01 }}
@@ -169,13 +170,25 @@ const PremiumCheckbox = ({ label, description, register, name, icon: Icon }) => 
   </motion.label>
 );
 
-// Premium Input component
-const PremiumInput = ({ register, name, label, placeholder, type = "text", error, icon: Icon, optional = false, max, min }) => (
+const PremiumInput = ({
+  register,
+  name,
+  label,
+  placeholder,
+  type = "text",
+  error,
+  icon: Icon,
+  optional = false,
+  max,
+  min,
+}) => (
   <div className="space-y-2">
     <label className="flex items-center gap-2 text-sm font-semibold text-[#5B544C]">
       {Icon && <Icon className="h-4 w-4 text-[#F5A623]" />}
       {label}
-      {optional && <span className="text-xs font-normal text-[#B8A99A]">(Optional)</span>}
+      {optional && (
+        <span className="text-xs font-normal text-[#B8A99A]">(Optional)</span>
+      )}
     </label>
     <input
       type={type}
@@ -186,7 +199,11 @@ const PremiumInput = ({ register, name, label, placeholder, type = "text", error
       className="w-full rounded-2xl border border-[#F0E5D8] bg-white px-5 py-3.5 text-sm text-[#2D2D2D] outline-none transition-all duration-200 placeholder:text-[#C8BBA8] focus:border-[#F5A623] focus:ring-2 focus:ring-[#F5A623]/20"
     />
     {error && (
-      <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-1 text-sm text-[#E88D67]">
+      <motion.p
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center gap-1 text-sm text-[#E88D67]"
+      >
         <AlertCircle className="h-3.5 w-3.5" />
         {error.message}
       </motion.p>
@@ -194,12 +211,21 @@ const PremiumInput = ({ register, name, label, placeholder, type = "text", error
   </div>
 );
 
-// Premium TextArea component
-const PremiumTextArea = ({ register, name, label, placeholder, rows = 3, error, optional = false }) => (
+const PremiumTextArea = ({
+  register,
+  name,
+  label,
+  placeholder,
+  rows = 3,
+  error,
+  optional = false,
+}) => (
   <div className="space-y-2">
     <label className="flex items-center gap-2 text-sm font-semibold text-[#5B544C]">
       {label}
-      {optional && <span className="text-xs font-normal text-[#B8A99A]">(Optional)</span>}
+      {optional && (
+        <span className="text-xs font-normal text-[#B8A99A]">(Optional)</span>
+      )}
     </label>
     <textarea
       {...register(name)}
@@ -208,7 +234,11 @@ const PremiumTextArea = ({ register, name, label, placeholder, rows = 3, error, 
       className="w-full rounded-2xl border border-[#F0E5D8] bg-white px-5 py-3.5 text-sm text-[#2D2D2D] outline-none transition-all duration-200 placeholder:text-[#C8BBA8] focus:border-[#F5A623] focus:ring-2 focus:ring-[#F5A623]/20"
     />
     {error && (
-      <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-1 text-sm text-[#E88D67]">
+      <motion.p
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center gap-1 text-sm text-[#E88D67]"
+      >
         <AlertCircle className="h-3.5 w-3.5" />
         {error.message}
       </motion.p>
@@ -216,7 +246,6 @@ const PremiumTextArea = ({ register, name, label, placeholder, rows = 3, error, 
   </div>
 );
 
-// Premium Select component
 const PremiumSelect = ({ register, name, label, options, error }) => (
   <div className="space-y-2">
     <label className="block text-sm font-semibold text-[#5B544C]">{label}</label>
@@ -231,7 +260,11 @@ const PremiumSelect = ({ register, name, label, options, error }) => (
       ))}
     </select>
     {error && (
-      <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-1 text-sm text-[#E88D67]">
+      <motion.p
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center gap-1 text-sm text-[#E88D67]"
+      >
         <AlertCircle className="h-3.5 w-3.5" />
         {error.message}
       </motion.p>
@@ -242,11 +275,19 @@ const PremiumSelect = ({ register, name, label, options, error }) => (
 export const OnboardingPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectPath = resolveRedirectPath(searchParams.get("redirect"), "/dashboard");
+  const redirectPath = resolveRedirectPath(
+    searchParams.get("redirect"),
+    "/dashboard"
+  );
   const { userProfile, refreshUserProfile } = useAuth();
-  const { data: onboardingResponse, isLoading, refetch: refetchOnboarding } = useOnboardingStatus();
+  const {
+    data: onboardingResponse,
+    isLoading,
+    refetch: refetchOnboarding,
+  } = useOnboardingStatus();
   const { mutate: saveStepMutation } = useSaveOnboardingStep();
-  const { mutateAsync: completeOnboarding, isPending: isCompleting } = useCompleteOnboarding();
+  const { mutateAsync: completeOnboarding, isPending: isCompleting } =
+    useCompleteOnboarding();
   const [currentStep, setCurrentStep] = useState(1);
   const [isDraftReady, setIsDraftReady] = useState(false);
   const [isClearingDraft, setIsClearingDraft] = useState(false);
@@ -267,11 +308,9 @@ export const OnboardingPage = () => {
 
   const values = watch();
 
-  // Fix: Clear draft when user changes (prevents cross-user data leak)
   useEffect(() => {
     const currentUserId = userProfile?.id;
     if (userIdRef.current && userIdRef.current !== currentUserId) {
-      // User has changed - clear all drafts and reset
       setIsClearingDraft(true);
       clearOnboardingDraft();
       setCurrentStep(1);
@@ -282,66 +321,62 @@ export const OnboardingPage = () => {
     userIdRef.current = currentUserId;
   }, [userProfile?.id, reset, refetchOnboarding]);
 
-  // Load onboarding data with user-specific handling
   useEffect(() => {
-    if (!onboardingResponse?.data || isClearingDraft) {
-      return;
-    }
+    if (!onboardingResponse?.data || isClearingDraft) return;
 
     if (onboardingResponse.data.onboardingCompleted) {
       navigate(redirectPath, { replace: true });
       return;
     }
 
-    // Get local draft - now should be user-specific from the utility
     const localDraft = getOnboardingDraft() ?? {};
-    
-    // Merge with priority: server draft > local draft > defaults > user profile
+
     const mergedValues = {
       ...defaultValues,
-      fullName: userProfile?.fullName || userProfile?.displayName || defaultValues.fullName,
-      phoneNumber: userProfile?.phoneNumber || userProfile?.contactNumber || defaultValues.phoneNumber,
+      fullName:
+        userProfile?.fullName ||
+        userProfile?.displayName ||
+        defaultValues.fullName,
+      phoneNumber:
+        userProfile?.phoneNumber ||
+        userProfile?.contactNumber ||
+        defaultValues.phoneNumber,
       ...(onboardingResponse.data.onboardingDraft ?? {}),
       ...localDraft,
     };
 
     reset(mergedValues);
-    
-    // Determine current step - don't auto-advance to 6 for new users
+
     let initialStep = 1;
     if (localDraft.currentStep) {
       initialStep = localDraft.currentStep;
     } else if (onboardingResponse.data.onboardingStep) {
       initialStep = onboardingResponse.data.onboardingStep;
     } else if (onboardingResponse.data.hasPetProfile) {
-      // Only set to 6 if they truly have a complete profile
       initialStep = 6;
     }
-    
+
     setCurrentStep(initialStep);
     setIsDraftReady(true);
     setIsClearingDraft(false);
-  }, [navigate, onboardingResponse, redirectPath, reset, userProfile, isClearingDraft]);
+  }, [
+    navigate,
+    onboardingResponse,
+    redirectPath,
+    reset,
+    userProfile,
+    isClearingDraft,
+  ]);
 
-  // Save draft on changes
   useEffect(() => {
-    if (!isDraftReady || isClearingDraft) {
-      return;
-    }
+    if (!isDraftReady || isClearingDraft) return;
 
-    const payload = {
-      ...values,
-      currentStep,
-    };
-
+    const payload = { ...values, currentStep };
     setOnboardingDraft(payload);
 
     const timeout = setTimeout(() => {
       if (currentStep < 6) {
-        saveStepMutation({
-          step: currentStep,
-          payload,
-        });
+        saveStepMutation({ step: currentStep, payload });
       }
     }, 900);
 
@@ -355,11 +390,24 @@ export const OnboardingPage = () => {
       { label: "Pet Name", value: values.petName || "Your pet", icon: Dog },
       { label: "Species", value: values.species || "Not set", icon: PawPrint },
       { label: "Breed", value: values.breed || "Not set", icon: Sparkles },
-      { label: "Vaccination", value: values.vaccinationStatus || "Not set", icon: Syringe },
-      { label: "Preferred Clinic", value: values.preferredClinic || "Open to suggestions", icon: Stethoscope },
+      {
+        label: "Vaccination",
+        value: values.vaccinationStatus || "Not set",
+        icon: Syringe,
+      },
+      {
+        label: "Preferred Clinic",
+        value: values.preferredClinic || "Open to suggestions",
+        icon: Stethoscope,
+      },
       {
         label: "Notifications",
-        value: values.notificationPreference === "email-and-app" ? "Email + App" : values.notificationPreference === "email-only" ? "Email only" : "App only",
+        value:
+          values.notificationPreference === "email-and-app"
+            ? "Email + App"
+            : values.notificationPreference === "email-only"
+            ? "Email only"
+            : "App only",
         icon: Bell,
       },
     ],
@@ -377,7 +425,9 @@ export const OnboardingPage = () => {
 
     const reader = new FileReader();
     reader.onload = () => {
-      setValue("photoDataUrl", String(reader.result ?? ""), { shouldDirty: true });
+      setValue("photoDataUrl", String(reader.result ?? ""), {
+        shouldDirty: true,
+      });
       toast.success("Pet photo added! It will appear across your dashboard.");
     };
     reader.readAsDataURL(file);
@@ -411,10 +461,14 @@ export const OnboardingPage = () => {
       const response = await completeOnboarding(data);
       clearOnboardingDraft();
       await refreshUserProfile(true);
-      toast.success(response.data?.message || "Welcome to PetHub! 🎉");
+      toast.success(response.data?.message || "Welcome to PetHub!");
       navigate(redirectPath, { replace: true });
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message || "Failed to complete onboarding");
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to complete onboarding"
+      );
     }
   };
 
@@ -431,7 +485,7 @@ export const OnboardingPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F4EAD9] via-[#F7EFE2] to-[#F4EAD9] px-4 py-6 sm:px-6 sm:py-8">
       <div className="mx-auto max-w-[1600px]">
-        {/* Header with animated badge */}
+
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -441,7 +495,9 @@ export const OnboardingPage = () => {
             <div className="rounded-2xl bg-gradient-to-br from-[#F5A623] to-[#F5C062] p-2 shadow-lg">
               <PawPrint className="h-6 w-6 text-white" />
             </div>
-            <span className="text-sm font-semibold uppercase tracking-wider text-[#B78331]">Premium Setup</span>
+            <span className="text-sm font-semibold uppercase tracking-wider text-[#B78331]">
+              Premium Setup
+            </span>
           </div>
           <div className="flex items-center gap-2 rounded-full bg-white/50 px-4 py-2 backdrop-blur-sm">
             <Sparkles className="h-4 w-4 text-[#F5A623]" />
@@ -450,9 +506,8 @@ export const OnboardingPage = () => {
         </motion.div>
 
         <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-          {/* Left Column - Information */}
+
           <motion.div {...fadeInUp} className="space-y-6">
-            {/* Hero Card */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#FFF8F0] to-white p-8 shadow-xl">
               <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#F5A623]/5 blur-3xl" />
               <div className="relative">
@@ -461,43 +516,46 @@ export const OnboardingPage = () => {
                   Premium Onboarding
                 </span>
                 <h1 className="mt-5 text-4xl font-bold leading-tight text-[#2D2D2D] md:text-5xl">
-                  Welcome to <span className="bg-gradient-to-r from-[#F5A623] to-[#E8911A] bg-clip-text text-transparent">PetHub</span>
+                  Welcome to{" "}
+                  <span className="bg-gradient-to-r from-[#F5A623] to-[#E8911A] bg-clip-text text-transparent">
+                    PetHub
+                  </span>
                 </h1>
                 <p className="mt-4 text-base leading-relaxed text-[#6B6B6B]">
-                  Build a warm, intelligent home base for your pet. Your dashboard, reminders, and records come alive with every detail you share.
+                  Build a warm, intelligent home base for your pet. Your
+                  dashboard, reminders, and records come alive with every detail
+                  you share.
                 </p>
               </div>
             </div>
 
-            {/* Enhanced Step Progress */}
             <StepProgress steps={onboardingSteps} currentStep={currentStep} />
 
-            {/* Feature Grid with Premium Cards */}
             <div className="grid gap-4 sm:grid-cols-2">
               {[
                 {
                   title: "Care-First Setup",
-                  detail: "Every detail builds a complete PetHub profile, not just a thin form.",
+                  detail:
+                    "Every detail builds a complete PetHub profile, not just a thin form.",
                   icon: Stethoscope,
-                  gradient: "from-[#FFF4E2] to-white",
                 },
                 {
                   title: "Smart Drafts",
-                  detail: "Your progress saves automatically across devices. Continue anytime.",
+                  detail:
+                    "Your progress saves automatically across devices. Continue anytime.",
                   icon: ShieldCheck,
-                  gradient: "from-[#FFF4E2] to-white",
                 },
                 {
                   title: "Pet-Led Dashboard",
-                  detail: "Your pet's photo and details flow into reminders, bookings, and cards.",
+                  detail:
+                    "Your pet's photo and details flow into reminders, bookings, and cards.",
                   icon: PawPrint,
-                  gradient: "from-[#FFF4E2] to-white",
                 },
                 {
                   title: "Premium Experience",
-                  detail: "Every interaction feels warm, polished, and thoughtfully designed.",
+                  detail:
+                    "Every interaction feels warm, polished, and thoughtfully designed.",
                   icon: Sparkles,
-                  gradient: "from-[#FFF4E2] to-white",
                 },
               ].map((item, idx) => (
                 <motion.div
@@ -510,20 +568,26 @@ export const OnboardingPage = () => {
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#F5A623] to-[#F5C062] shadow-md transition-all duration-300 group-hover:scale-105">
                     <item.icon className="h-5 w-5 text-white" />
                   </div>
-                  <p className="mt-4 text-lg font-semibold text-[#2D2D2D]">{item.title}</p>
-                  <p className="mt-2 text-sm leading-relaxed text-[#6B6B6B]">{item.detail}</p>
+                  <p className="mt-4 text-lg font-semibold text-[#2D2D2D]">
+                    {item.title}
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-[#6B6B6B]">
+                    {item.detail}
+                  </p>
                 </motion.div>
               ))}
             </div>
           </motion.div>
 
-          {/* Right Column - Form */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <form onSubmit={handleSubmit(onSubmit)} className="overflow-hidden rounded-3xl bg-white/90 shadow-2xl backdrop-blur-sm">
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="overflow-hidden rounded-3xl bg-white/90 shadow-2xl backdrop-blur-sm"
+            >
               <div className="border-b border-[#F0E5D8] bg-gradient-to-r from-[#FFFBF5] to-white px-6 py-4">
                 <div className="flex items-center gap-2">
                   {onboardingSteps[currentStep - 1]?.icon &&
@@ -545,8 +609,12 @@ export const OnboardingPage = () => {
 
               <div className="p-6">
                 <AnimatePresence mode="wait">
-                  <motion.div key={currentStep} {...sectionAnimation} className="min-h-[560px]">
-                    {/* Step 1: Welcome & Personal Info */}
+                  <motion.div
+                    key={currentStep}
+                    {...sectionAnimation}
+                    className="min-h-[560px]"
+                  >
+
                     {currentStep === 1 && (
                       <div className="space-y-6">
                         <div className="grid gap-5 sm:grid-cols-2">
@@ -605,7 +673,6 @@ export const OnboardingPage = () => {
                       </div>
                     )}
 
-                    {/* Step 2: Pet Photo */}
                     {currentStep === 2 && (
                       <div className="space-y-6">
                         <UploadPetPhotoCard
@@ -615,14 +682,14 @@ export const OnboardingPage = () => {
                           helperText="Upload a clear, friendly photo. This will appear across your dashboard, booking summaries, and profile cards."
                         />
                         <div className="rounded-2xl bg-[#FFF8F0] p-4 text-center">
-                          <p className="text-sm text-[#6B6B6B]">
-                            ✨ A pet photo makes your dashboard 3x more personal. You can always update it later.
-                          </p>
+                          <div className="flex items-center justify-center gap-2 text-sm text-[#6B6B6B]">
+                            <Sparkles className="h-4 w-4 text-[#F5A623]" />
+                            A pet photo makes your dashboard 3x more personal. You can always update it later.
+                          </div>
                         </div>
                       </div>
                     )}
 
-                    {/* Step 3: Pet Details */}
                     {currentStep === 3 && (
                       <div className="space-y-5">
                         <div className="grid gap-4 sm:grid-cols-2">
@@ -688,7 +755,6 @@ export const OnboardingPage = () => {
                       </div>
                     )}
 
-                    {/* Step 4: Health Basics */}
                     {currentStep === 4 && (
                       <div className="space-y-5">
                         <PremiumSelect
@@ -696,9 +762,9 @@ export const OnboardingPage = () => {
                           name="vaccinationStatus"
                           label="Vaccination Status"
                           options={[
-                            { value: "Up to date", label: "✅ Up to date" },
-                            { value: "Needs review", label: "⚠️ Needs review" },
-                            { value: "In progress", label: "🔄 In progress" },
+                            { value: "Up to date", label: "Up to date" },
+                            { value: "Needs review", label: "Needs review" },
+                            { value: "In progress", label: "In progress" },
                           ]}
                           error={errors.vaccinationStatus}
                         />
@@ -735,7 +801,6 @@ export const OnboardingPage = () => {
                       </div>
                     )}
 
-                    {/* Step 5: Preferences */}
                     {currentStep === 5 && (
                       <div className="space-y-5">
                         <div className="space-y-3">
@@ -768,11 +833,9 @@ export const OnboardingPage = () => {
                             icon={Users}
                           />
                         </div>
-
                       </div>
                     )}
 
-                    {/* Step 6: Complete & Review */}
                     {currentStep === 6 && (
                       <div className="space-y-6">
                         <div className="rounded-2xl bg-gradient-to-br from-[#FFF8F0] to-white p-5">
@@ -781,43 +844,65 @@ export const OnboardingPage = () => {
                               <CheckCircle2 className="h-6 w-6 text-[#F5A623]" />
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-[#B78331]">Ready to Launch</p>
-                              <p className="text-lg font-bold text-[#2D2D2D]">Review your setup</p>
+                              <p className="text-sm font-semibold text-[#B78331]">
+                                Ready to Launch
+                              </p>
+                              <p className="text-lg font-bold text-[#2D2D2D]">
+                                Review your setup
+                              </p>
                             </div>
                           </div>
                         </div>
 
                         <div className="grid gap-5 md:grid-cols-2">
-                          {/* Pet Preview Card */}
                           <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#FFF8F0] to-white shadow-md">
                             <div className="relative h-48 w-full overflow-hidden bg-[#F0E5D8]">
                               {photoPreview ? (
-                                <img src={photoPreview} alt={values.petName} className="h-full w-full object-cover" />
+                                <img
+                                  src={photoPreview}
+                                  alt={values.petName}
+                                  className="h-full w-full object-cover"
+                                />
                               ) : (
                                 <div className="flex h-full items-center justify-center">
                                   <PawPrint className="h-16 w-16 text-[#D4C5B0]" />
                                 </div>
                               )}
                               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                                <p className="text-xl font-bold text-white">{values.petName || "Your Pet"}</p>
-                                <p className="text-sm text-white/80">{values.breed || "Breed"} • {values.species || "Species"}</p>
+                                <p className="text-xl font-bold text-white">
+                                  {values.petName || "Your Pet"}
+                                </p>
+                                <p className="text-sm text-white/80">
+                                  {values.breed || "Breed"} •{" "}
+                                  {values.species || "Species"}
+                                </p>
                               </div>
                             </div>
                             <div className="p-4">
-                              <p className="text-center text-sm text-[#6B6B6B]">Primary Pet Profile</p>
+                              <p className="text-center text-sm text-[#6B6B6B]">
+                                Primary Pet Profile
+                              </p>
                             </div>
                           </div>
 
-                          {/* Summary Cards */}
                           <div className="space-y-3">
                             {summaryItems.map((item) => (
-                              <div key={item.label} className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm">
+                              <div
+                                key={item.label}
+                                className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm"
+                              >
                                 <div className="rounded-lg bg-[#F5A623]/10 p-2">
-                                  {item.icon && <item.icon className="h-4 w-4 text-[#F5A623]" />}
+                                  {item.icon && (
+                                    <item.icon className="h-4 w-4 text-[#F5A623]" />
+                                  )}
                                 </div>
                                 <div className="flex-1">
-                                  <p className="text-xs text-[#8B7B66]">{item.label}</p>
-                                  <p className="text-sm font-semibold text-[#2D2D2D]">{item.value}</p>
+                                  <p className="text-xs text-[#8B7B66]">
+                                    {item.label}
+                                  </p>
+                                  <p className="text-sm font-semibold text-[#2D2D2D]">
+                                    {item.value}
+                                  </p>
                                 </div>
                               </div>
                             ))}
@@ -825,9 +910,10 @@ export const OnboardingPage = () => {
                         </div>
 
                         <div className="rounded-2xl bg-gradient-to-r from-[#F5A623]/10 to-transparent p-4">
-                          <p className="text-center text-sm text-[#6B6B6B]">
-                            ✨ Your dashboard will open with personalized recommendations, care reminders, and a complete pet profile.
-                          </p>
+                          <div className="flex items-center justify-center gap-2 text-sm text-[#6B6B6B]">
+                            <Sparkles className="h-4 w-4 text-[#F5A623]" />
+                            Your dashboard will open with personalized recommendations, care reminders, and a complete pet profile.
+                          </div>
                         </div>
                       </div>
                     )}
@@ -835,7 +921,6 @@ export const OnboardingPage = () => {
                 </AnimatePresence>
               </div>
 
-              {/* Navigation Buttons */}
               <div className="border-t border-[#F0E5D8] bg-[#FFFBF5] px-6 py-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <motion.button
@@ -871,7 +956,7 @@ export const OnboardingPage = () => {
                     >
                       {isCompleting ? (
                         <>
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          <RefreshCw className="h-4 w-4 animate-spin" />
                           Setting up...
                         </>
                       ) : (

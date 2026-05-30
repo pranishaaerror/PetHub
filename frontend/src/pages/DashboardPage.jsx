@@ -458,12 +458,12 @@ export const DashboardPage = () => {
                   const typeStyle = typeColors[record.type] || typeColors.default;
                   return (
                     <div key={record._id} className="flex gap-4">
-                      {/* Timeline */}
+                      
                       <div className="flex flex-col items-center">
                         <div className="timeline-dot" />
                         {index < recentRecords.length - 1 && <div className="timeline-line" />}
                       </div>
-                      {/* Content */}
+                     
                       <div className="mb-4 min-w-0 flex-1 rounded-2xl bg-[#FAFAF8] p-4 border border-[rgba(0,0,0,0.05)]">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <p className="text-base font-700 text-[#1A1A1A]">{record.title}</p>
@@ -522,10 +522,10 @@ export const DashboardPage = () => {
             )}
           </div>
 
-          {/* Right column */}
+          
           <div className="space-y-4">
 
-            {/* Quick Actions */}
+          
             <div className="card p-5 sm:p-6">
               <span className="chip">Quick Actions</span>
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
@@ -547,7 +547,7 @@ export const DashboardPage = () => {
               </div>
             </div>
 
-            {/* Community Meetup */}
+            
             {featuredMeetup ? (
               <div className="meetup-card p-5 sm:p-6">
                 <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[10px] font-700 uppercase tracking-widest text-white/70">

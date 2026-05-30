@@ -20,14 +20,12 @@ import { PetHubLoader } from "../components/PetHubLoader";
 import { useCurrentUser, useUpdateCurrentUser } from "../apis/users/hooks";
 import { useMyPets } from "../apis/pets/hooks";
 
-/* ── schema ──────────────────────────────────────────────────────────────── */
+
 const ownerSchema = z.object({
   fullName: z.string().min(2, "Full name is required."),
   phoneNumber: z.string().optional(),
 });
 
-/* ── small helpers ───────────────────────────────────────────────────────── */
-/* ── page ─────────────────────────────────────────────────────────────────── */
 export const ProfilePage = () => {
   const queryClient = useQueryClient();
   const { data: userResponse, isLoading: isUserLoading } = useCurrentUser();
@@ -95,11 +93,10 @@ export const ProfilePage = () => {
   return (
     <div className="space-y-5 pb-10">
 
-      {/* ── HERO / IDENTITY CARD ─────────────────────────────────────── */}
+  
       <section className="overflow-hidden rounded-[28px] bg-white shadow-[0_6px_28px_rgba(45,45,45,0.07)]">
         <div className="grid xl:grid-cols-[1fr_320px]">
 
-          {/* left — user info */}
           <div className="flex flex-col justify-center gap-5 p-6 md:p-10">
             <div className="inline-flex w-fit items-center gap-2 rounded-full bg-[#FFF5E0] px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-[#B78331]">
               <UserRound className="h-3.5 w-3.5" />
@@ -116,7 +113,7 @@ export const ProfilePage = () => {
               </div>
             </div>
 
-            {/* info chips row */}
+        
             <div className="flex flex-wrap gap-3">
               <div className="flex items-center gap-2 rounded-2xl bg-[#FFF5E0] px-4 py-2.5">
                 <Shield className="h-4 w-4 text-[#F5A623]" />
@@ -144,7 +141,6 @@ export const ProfilePage = () => {
             </div>
           </div>
 
-          {/* right — pet quick-access panel */}
           <div className="hidden xl:flex flex-col justify-center gap-4 bg-[linear-gradient(145deg,#FFF8EC,#FFE9A8)] p-7">
             <p className="text-xs font-semibold uppercase tracking-widest text-[#B78331]">
               Your pets
@@ -185,8 +181,6 @@ export const ProfilePage = () => {
           </div>
         </div>
       </section>
-
-      {/* ── PET PROFILE SHORTCUT (mobile / non-xl) ───────────────────── */}
       <div className="xl:hidden flex items-center justify-between rounded-[22px] bg-white px-5 py-4 shadow-[0_4px_18px_rgba(45,45,45,0.07)]">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#FFF5E0]">
@@ -210,11 +204,10 @@ export const ProfilePage = () => {
         </Link>
       </div>
 
-      {/* ── EDIT PERSONAL INFO ───────────────────────────────────────── */}
       <section className="overflow-hidden rounded-[28px] bg-white shadow-[0_6px_28px_rgba(45,45,45,0.07)]">
         <div className="grid xl:grid-cols-[1fr_1fr]">
 
-          {/* form */}
+        
           <div className="p-6 md:p-8">
             <div className="mb-5 flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-[#FFF5E0]">
@@ -264,7 +257,7 @@ export const ProfilePage = () => {
             </form>
           </div>
 
-          {/* decorative right side */}
+         
           <div className="hidden xl:flex flex-col justify-center gap-4 bg-[linear-gradient(145deg,#FAF6EF,#FFF5E0)] p-8">
             <p className="text-xs font-semibold uppercase tracking-widest text-[#B78331]">
               Keep it current

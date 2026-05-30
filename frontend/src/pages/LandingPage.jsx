@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, PawPrint } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import LandingPageDog from "../assets/landingpagedog.png";
@@ -53,11 +53,13 @@ export const LandingPage = () => {
 
                 <Header />
 
-                {/* Hero Section */}
                 <section className="px-6 py-20 md:px-12 lg:px-16" id="home">
                     <div className="pet-rise-in flex items-center gap-8">
                         <div className="flex-1">
-                            <span className="pet-chip">🐾 Warm, modern, premium</span>
+                            <span className="pet-chip flex items-center gap-1.5 w-fit">
+                                <PawPrint size={14} color="#E8920A" />
+                                Warm, modern, premium
+                            </span>
                             <h1 className="mt-5 max-w-[900px] text-5xl font-bold leading-[1.02] md:text-5xl">
                                 Every pet deserves a{" "}
                                 <span className="text-[#FFB347]">loving</span>{" "}
@@ -91,7 +93,6 @@ export const LandingPage = () => {
                     </div>
                 </section>
 
-                {/* Features Section */}
                 <section className="px-6 py-20 md:px-12 lg:px-16 bg-white" id="features">
                     <div>
                         <p className="text-[11px] font-semibold uppercase mb-3 text-[#E8920A] tracking-wide">
@@ -124,7 +125,6 @@ export const LandingPage = () => {
                     </div>
                 </section>
 
-                {/* How It Works Section */}
                 <section className="px-6 py-20 md:px-12 lg:px-16" id="how-it-works">
                     <p className="text-[11px] font-semibold uppercase mb-3 text-[#E8920A] tracking-wide">
                         How it works

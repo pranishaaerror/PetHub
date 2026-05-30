@@ -194,7 +194,6 @@ export const UserAppointmentsPage = () => {
 
       <div className="ap-root mx-auto max-w-6xl space-y-5">
 
-        {/* ── HEADER ── */}
         <div className="ap-card p-5 sm:p-7">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -216,7 +215,6 @@ export const UserAppointmentsPage = () => {
             Schedule vet checkups and grooming, then review what's coming up or revisit past visits. You can cancel or reschedule open bookings anytime.
           </p>
 
-          {/* Summary pills */}
           <div className="mt-5 flex flex-wrap gap-3">
             <div className="flex items-center gap-2 rounded-xl bg-[#E3F2FD] px-4 py-2.5">
               <CalendarClock className="h-4 w-4 text-[#1565C0]" />
@@ -229,10 +227,10 @@ export const UserAppointmentsPage = () => {
           </div>
         </div>
 
-        {/* ── MAIN GRID ── */}
+        
         <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
 
-          {/* ── UPCOMING ── */}
+          
           <div className="ap-card p-5 sm:p-6">
             <div className="flex items-center gap-3 mb-5">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E3F2FD]">
@@ -257,7 +255,7 @@ export const UserAppointmentsPage = () => {
                       <div className="h-1 w-full" style={{ background: s.dot }} />
 
                       <div className="p-4">
-                        {/* Top row */}
+                        
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="text-base font-700 text-[#1A1A1A] leading-tight">
@@ -274,7 +272,6 @@ export const UserAppointmentsPage = () => {
                           </span>
                         </div>
 
-                        {/* Date + time block */}
                         <div className="mt-3 flex flex-wrap gap-2">
                           <div className="flex items-center gap-1.5 rounded-lg bg-[#F7F3ED] px-3 py-1.5">
                             <CalendarClock className="h-3.5 w-3.5 text-[#F5A623]" />
@@ -298,7 +295,7 @@ export const UserAppointmentsPage = () => {
                           )}
                         </div>
 
-                        {/* Actions */}
+                        
                         <div className="mt-4 flex flex-wrap gap-2">
                           <button
                             type="button"
@@ -320,7 +317,6 @@ export const UserAppointmentsPage = () => {
                             <XCircle className="h-3.5 w-3.5" />
                             Cancel
                           </button>
-                          {/* Pay button if unpaid */}
                           {apt.payment?.status !== "paid" && (
                             <button
                               type="button"
@@ -334,7 +330,6 @@ export const UserAppointmentsPage = () => {
                           )}
                         </div>
 
-                        {/* Reschedule panel */}
                         {isOpen && (
                           <div className="mt-4 rounded-2xl bg-[#FAFAF8] p-4 border border-[#EAE0D2]">
                             <p className="mb-3 text-xs font-700 uppercase tracking-wider text-[#9B8C7A]">
@@ -373,7 +368,6 @@ export const UserAppointmentsPage = () => {
             </div>
           </div>
 
-          {/* ── PAST & CANCELLED ── */}
           <div className="ap-card p-5 sm:p-6">
             <div className="flex items-center gap-3 mb-5">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F5F0E8]">
@@ -391,12 +385,12 @@ export const UserAppointmentsPage = () => {
                   const s = getStatus(apt.status);
                   return (
                     <div key={apt._id} className="past-row">
-                      {/* Status dot */}
+                      
                       <div
                         className="h-2.5 w-2.5 shrink-0 rounded-full"
                         style={{ background: s.dot }}
                       />
-                      {/* Info */}
+                    
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-600 text-[#1A1A1A]">
                           {apt.serviceId?.serviceName || "Visit"}

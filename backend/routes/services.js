@@ -3,7 +3,7 @@ import Services from "../models/Services.js";
 import MedicalRecord from "../models/MedicalRecord.js";
 import AppointmentTable from "../models/AppointmentTable.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
-import { createNotification } from "../services/notificationService.js";
+// import { createNotification } from "../services/notificationService.js";
 
 const router = express.Router();
 

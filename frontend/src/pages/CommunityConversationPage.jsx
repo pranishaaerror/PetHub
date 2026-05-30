@@ -65,12 +65,12 @@ export const CommunityConversationPage = () => {
         },
       });
 
-      // If slug looks like a MongoDB ObjectId (meetup ID), also RSVP the user
+  
       if (slug && /^[a-f\d]{24}$/i.test(slug)) {
         try {
           await axiosInstance.post("/community/rsvp", { meetupId: slug });
         } catch {
-          // RSVP failure is non-critical
+          
         }
       }
 

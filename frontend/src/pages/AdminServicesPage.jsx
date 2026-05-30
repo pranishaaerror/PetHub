@@ -154,7 +154,7 @@ function CategoryDropdown({ value, onChange, disabled }) {
   );
 }
 
-/* ── Service form modal ── */
+
 function ServiceModal({ initial, onClose, onSave, isSaving }) {
   const [form, setForm] = useState(initial ?? EMPTY_FORM);
   const isEdit = !!initial;
@@ -397,7 +397,7 @@ export const AdminServicesPage = () => {
       {deleteTarget && <DeleteConfirmModal service={deleteTarget} onConfirm={handleDelete} onCancel={() => setDeleteTarget(null)} isDeleting={isDeleting} />}
       {viewTarget && <ServiceDetailModal service={viewTarget} onClose={() => setViewTarget(null)} onEdit={(s) => setEditTarget({ ...s, price: String(s.price), durationMinutes: String(s.durationMinutes) })} />}
 
-      {/* ── HEADER ── */}
+      
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Services</h1>
@@ -462,24 +462,21 @@ export const AdminServicesPage = () => {
                       )}
                     </td>
 
-                    {/* Category */}
                     <td className="px-6 py-4">
                       <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${cfg.badge}`}>
                         {catLabel}
                       </span>
                     </td>
 
-                    {/* Price */}
+                   
                     <td className="px-6 py-4">
                       <span className="text-sm font-semibold text-gray-900">NPR {service.price}</span>
                     </td>
 
-                    {/* Duration */}
                     <td className="px-6 py-4">
                       <span className="text-sm text-gray-700">{service.durationMinutes} min</span>
                     </td>
 
-                    {/* Vet Required */}
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                         service.requiresVet
@@ -491,7 +488,7 @@ export const AdminServicesPage = () => {
                       </span>
                     </td>
 
-                    {/* Discount */}
+                   
                     <td className="px-6 py-4">
                       {service.discountPrice != null && service.discountPrice < service.price ? (
                         <div>
@@ -507,7 +504,7 @@ export const AdminServicesPage = () => {
                       )}
                     </td>
 
-                    {/* Active toggle */}
+                    
                     <td className="px-6 py-4">
                       <button
                         onClick={async () => {

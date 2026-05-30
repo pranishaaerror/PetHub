@@ -211,7 +211,6 @@ export const PetProfilePage = () => {
 
       <div className="pp-root mx-auto max-w-7xl space-y-5">
 
-        {/* ── PAGE HEADER ── */}
         <div className="pp-card p-5 sm:p-7">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -237,17 +236,13 @@ export const PetProfilePage = () => {
           </p>
         </div>
 
-        {/* ── MAIN GRID ── */}
         <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
 
-          {/* ── LEFT: Photo + Form ── */}
           <div className="pp-card overflow-hidden">
 
-            {/* Photo section */}
             <div className="relative bg-gradient-to-br from-[#FFF4E0] to-[#FFE4B0] p-6 sm:p-8">
               <div className="flex flex-col gap-6 sm:flex-row sm:items-end">
 
-                {/* Photo */}
                 <label className="photo-wrap relative w-fit cursor-pointer">
                   <div className="overflow-hidden rounded-2xl shadow-lg" style={{ width: 160, height: 160 }}>
                     {primaryPet.photoUrl ? (
@@ -299,7 +294,6 @@ export const PetProfilePage = () => {
 
             <hr className="pp-divider" />
 
-            {/* Form */}
             <form onSubmit={handlePetSubmit} className="p-6 sm:p-8">
               <h3 className="pp-serif mb-6 text-xl font-700 text-[#1A1A1A]">Pet details</h3>
 
@@ -330,10 +324,8 @@ export const PetProfilePage = () => {
             </form>
           </div>
 
-          {/* ── RIGHT: Stat cards ── */}
           <div className="flex flex-col gap-4">
 
-            {/* Care plan */}
             <div className="pp-card p-5">
               <div className="flex items-center gap-3">
                 <div className="stat-icon-wrap bg-[#FFF0D6]">
@@ -351,7 +343,6 @@ export const PetProfilePage = () => {
               </p>
             </div>
 
-            {/* Health snapshot */}
             <div className="pp-card p-5">
               <div className="flex items-center gap-3">
                 <div className="stat-icon-wrap bg-[#EDE7F6]">
@@ -377,7 +368,6 @@ export const PetProfilePage = () => {
               </Link>
             </div>
 
-            {/* Quick tips */}
             <div className="pp-card bg-[#F7F3ED] p-5">
               <p className="text-[11px] font-700 uppercase tracking-widest text-[#9B8C7A]">Tips</p>
               <ul className="mt-3 space-y-2.5">
